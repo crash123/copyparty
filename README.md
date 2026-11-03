@@ -2321,6 +2321,19 @@ tell search engines you don't wanna be indexed,  either using the good old [robo
 also, `--force-js` disables the plain HTML folder listing, making things harder to parse for *some* search engines -- note that crawlers which understand javascript (such as google) will not be affected
 
 
+## modern ui
+
+this fork ships an optional, dependency-free modern filebrowser on top of the classic one:
+
+```sh
+python3 -m copyparty --modern-ui -v /srv/files::A
+```
+
+it adds a folder tree, grid/list views, drag-and-drop uploads with progress, inline previews, search, and light/dark themes, while still using copyparty's own auth, permissions and endpoints -- so `?b=u` (basic browser), `?h` (control panel) and the classic UI all keep working, and a failed bundle load simply reveals the original interface.
+
+there is no build step and no `node_modules`; see [docs/modern-ui.md](docs/modern-ui.md) for the tour, the architecture and the current limitations.
+
+
 ## themes
 
 you can change the default theme with `--theme 2`, and add your own themes by modifying `browser.css` or providing your own css to `--css-browser`, then telling copyparty they exist by increasing `--themes`

@@ -1460,6 +1460,14 @@ class HttpCli(object):
                 else:
                     return self.tx_res(res_path)
 
+            # the modern ui is served straight from disk instead of the
+            # embedded RES manifest, so it can be edited without rebuilding;
+            # everything else keeps using the signed resource table.
+            if res_path.startswith("web/ui/"):
+                ap = self.E.mod_ + res_path
+                if bos.path.exists(ap):
+                    return self.tx_file("oh_g", ap)
+
             if res_path in RESM:
                 ap = self.E.mod_ + RESM[res_path]
                 if (
@@ -7410,6 +7418,38 @@ class HttpCli(object):
             zs = self.args.css_browser
             zs += "&" if "?" in zs else "?"
             j2a["css"] = zs
+
+        if self.args.modern_ui and tpl == "browser":
+            # the modern ui is a pure client-side layer over the classic page;
+            # the classic markup stays in the DOM (hidden) so that ?b=u and the
+            # control panel keep working, and so that a failed bundle load can
+            # simply reveal the original ui again.
+            ui = "/.cpr/w/ui/"
+            if "js" not in j2a:
+                j2a["js"] = ui + "boot.js?"
+            else:
+                self.html_head += (
+                    '<script nonce="{{ js_nonce }}" src="%sboot.js?_=%s"></script>\n'
+                    % (ui, self.conn.hsrv.cachebuster())
+                )
+
+            if "css" not in j2a:
+                j2a["css"] = ui + "ui.css?"
+            else:
+                self.html_head += (
+                    '<link rel="stylesheet" href="%sui.css?_=%s" />\n'
+                    % (ui, self.conn.hsrv.cachebuster())
+                )
+
+            # hide the classic chrome from the very first paint
+            self.html_head += (
+                '<script nonce="{{ js_nonce }}">'
+                'document.documentElement.classList.add("cpm-active");'
+                "setTimeout(function(){"
+                "if(!document.getElementById('cpm-root'))"
+                'document.documentElement.classList.remove("cpm-active")'
+                "},6000)</script>\n"
+            )
 
         if not self.conn.hsrv.prism:
             j2a["no_prism"] = True

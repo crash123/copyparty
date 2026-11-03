@@ -2200,6 +2200,7 @@ def add_ui(ap, retry: int):
     ap2.add_argument("--css-browser", metavar="L", type=u, default="", help="URL to additional CSS to include in the filebrowser html")
     ap2.add_argument("--js-browser", metavar="L", type=u, default="", help="URL to additional JS to include in the filebrowser html")
     ap2.add_argument("--js-other", metavar="L", type=u, default="", help="URL to additional JS to include in all other pages")
+    ap2.add_argument("--modern-ui", action="store_true", help="serve the modern filebrowser UI instead of the classic one; the classic page is still rendered underneath and remains reachable with ?b=u, and this only changes what the browser displays")
     ap2.add_argument("--html-head", metavar="TXT", type=u, default="", help="text to append to the <head> of all HTML pages (except for basic-browser); can be @PATH to send the contents of a file at PATH, and/or begin with %% to render as jinja2 template; \033[32m<script>\033[0m will not work, use \033[32m<script nonce=\"{{ js_nonce }}\">\033[0m (volflag=html_head)")
     ap2.add_argument("--html-head-s", metavar="T", type=u, default="", help="text to append to the <head> of all HTML pages (except for basic-browser); similar to (and can be combined with) \033[33m--html-head\033[0m but only accepts static text (volflag=html_head_s)")
     ap2.add_argument("--ih", action="store_true", help="if a folder contains index.html, show that instead of the directory listing by default (can be changed in the client settings UI, or add ?v to URL for override)")
