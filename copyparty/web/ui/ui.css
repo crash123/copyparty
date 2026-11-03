@@ -22,9 +22,10 @@
 	--cpm-radius-sm: 8px;
 	--cpm-top: 58px;
 	--cpm-side: 252px;
+	color-scheme: light;
 }
 
-html.cpm-dark #cpm-root {
+#cpm-root.cpm-dark {
 	--cpm-accent: #7c8cff;
 	--cpm-accent-2: #a78bfa;
 	--cpm-accent-fg: #0b0d12;
@@ -38,6 +39,7 @@ html.cpm-dark #cpm-root {
 	--cpm-muted: #8b93a7;
 	--cpm-danger: #f87171;
 	--cpm-ok: #4ade80;
+	color-scheme: dark;
 }
 
 /* hide the classic filebrowser chrome while the modern ui is mounted */
@@ -54,6 +56,14 @@ html.cpm-active #ops,
 html.cpm-active .opview,
 html.cpm-active #widget {
 	display: none !important;
+}
+
+/* copyparty's classic stylesheet puts a 1px offset text-shadow on <html>, which
+   inherits into every element and shows up as a halo around our text; this UI
+   deliberately uses none, so drop it for the whole subtree */
+#cpm-root,
+#cpm-root * {
+	text-shadow: none;
 }
 
 html.cpm-active,
@@ -107,7 +117,7 @@ html.cpm-active body {
 	align-items: center;
 	gap: 10px;
 	padding: 0 14px;
-	background: color-mix(in srgb, var(--cpm-surface) 94%, transparent);
+	background: var(--cpm-surface);
 	border-bottom: 1px solid var(--cpm-border);
 	min-width: 0;
 }
@@ -118,7 +128,7 @@ html.cpm-active body {
 	gap: 8px;
 	text-decoration: none;
 	color: var(--cpm-fg);
-	font-weight: 650;
+	font-weight: 600;
 	letter-spacing: -0.01em;
 	white-space: nowrap;
 	padding-right: 4px;
@@ -199,6 +209,8 @@ html.cpm-active body {
 }
 
 .cpm-search input {
+	appearance: none;
+	-webkit-appearance: none;
 	width: 250px;
 	max-width: 34vw;
 	padding: 8px 30px 8px 32px;
@@ -266,7 +278,7 @@ html.cpm-active body {
 	cursor: pointer;
 	white-space: nowrap;
 	font-size: 13px;
-	font-weight: 550;
+	font-weight: 500;
 	transition: background 0.15s, border-color 0.15s, transform 0.08s;
 }
 
@@ -498,7 +510,7 @@ html.cpm-active body {
 }
 
 .cpm-tb-path {
-	font-weight: 650;
+	font-weight: 600;
 	font-size: 15px;
 	letter-spacing: -0.01em;
 	max-width: 46%;
@@ -531,6 +543,8 @@ html.cpm-active body {
 }
 
 .cpm-sort select {
+	appearance: none;
+	-webkit-appearance: none;
 	border: 0;
 	background: transparent;
 	outline: none;
@@ -671,7 +685,7 @@ html.cpm-active body {
 
 .cpm-name {
 	font-size: 13px;
-	font-weight: 560;
+	font-weight: 600;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -734,7 +748,7 @@ html.cpm-active body {
 	text-align: left;
 	padding: 10px 14px;
 	font-size: 11.5px;
-	font-weight: 650;
+	font-weight: 600;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: var(--cpm-muted);
@@ -782,7 +796,7 @@ html.cpm-active body {
 
 .cpm-c-name {
 	color: var(--cpm-fg) !important;
-	font-weight: 520;
+	font-weight: 500;
 }
 
 .cpm-c-name .cpm-ico-wrap {
@@ -1098,6 +1112,8 @@ html.cpm-active body {
 }
 
 .cpm-field input {
+	appearance: none;
+	-webkit-appearance: none;
 	width: 100%;
 	padding: 9px 11px;
 	border-radius: 10px;

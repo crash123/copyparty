@@ -100,7 +100,7 @@ const SHELL = `
 	<div class="cpm-actions">
 		<div class="cpm-search">
 			<span class="cpm-search-ico"></span>
-			<input id="cpm-q" type="search" placeholder="Search files and folders" autocomplete="off" spellcheck="false" />
+			<input id="cpm-q" type="text" role="searchbox" placeholder="Search files and folders" autocomplete="off" spellcheck="false" />
 			<button class="cpm-search-clear" data-act="clearq" title="Clear">${icon("close", 14)}</button>
 		</div>
 		<button class="cpm-icon-btn" data-act="view" id="cpm-view" title="Grid / list view"></button>
@@ -136,11 +136,13 @@ const SHELL = `
 
 function mount() {
 	const root = el("div", { id: "cpm-root", class: "cpm" }, SHELL);
+	// pick the palette before the node is attached, so the first paint is
+	// already in the right theme instead of transitioning from the default
+	applyTheme(store("theme") || "auto", root);
 	doc.body.appendChild(root);
 	doc.documentElement.classList.add("cpm-active");
 
 	if (state.view === "list") doc.documentElement.classList.add("cpm-view-list");
-	applyTheme(store("theme") || "auto");
 
 	const mark = qs(".cpm-brand-mark");
 	mark.innerHTML = icon("home", 18);
@@ -153,19 +155,19 @@ function mount() {
 
 /* --------------------------------------------------------------- theming */
 
-function applyTheme(t) {
+function applyTheme(t, elRoot) {
+	// keep the theme class on the ui root rather than on <html>: #cpm-root is a
+	// fixed, composited layer, and toggling a class above it leaves its form
+	// controls and icons painted with the previous theme in some browsers.
+	const root = elRoot || qs("#cpm-root") || doc.documentElement;
+	root.classList.remove("cpm-dark", "cpm-light");
 	if (t === "auto") {
-		doc.documentElement.classList.remove("cpm-dark", "cpm-light");
-		doc.documentElement.classList.add(
-			window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "cpm-dark"
-				: "cpm-light"
-		);
+		const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+		root.classList.add(dark ? "cpm-dark" : "cpm-light");
 	} else {
-		doc.documentElement.classList.remove("cpm-dark", "cpm-light");
-		doc.documentElement.classList.add("cpm-" + t);
+		root.classList.add("cpm-" + t);
 	}
-	const b = qs("#cpm-theme");
+	const b = root.querySelector ? root.querySelector("#cpm-theme") : null;
 	if (b) b.innerHTML = icon(t === "light" ? "sun" : "moon", 18);
 	store("theme", t);
 }
