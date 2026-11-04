@@ -47,10 +47,13 @@ copyparty \
 | search | instant filtering of the current folder, plus copyparty's server-side global search when its index is enabled |
 | preview | images, video, audio, PDF, plain text, and rendered markdown, in an overlay viewer |
 | file ops | create folder, rename, move, delete, download, zip a folder — all gated by the permissions the server reports |
-| upload | drag-and-drop anywhere (or the Upload button) with a per-file progress queue and cancel |
+| upload | drag-and-drop anywhere (or the Upload button): resumable, chunked up2k uploads when the page is on https or localhost, falling back to the classic multipart uploader otherwise; per-file hashing/sending progress, cancel and retry |
+| big folders | entries are rendered 200 at a time with a "show more" control |
 | auth | sign in / sign out, per-user permissions, `--usernames` and password-only servers both supported |
 | theming | dark and light, follows the OS by default, remembered per browser |
-| keyboard | `/` search, `Esc` close/clear, `Backspace` up one folder, `F2` rename, `Delete` delete, `Ctrl/Cmd-A` select all, `Enter` open |
+| keyboard | `/` search, `Esc` close/clear, `Backspace` up one folder, `F2` rename, `Delete` delete, `Ctrl/Cmd-A` select all, `Enter` open, arrows walk the listing |
+| accessibility | dialogs take and trap focus and return it to whatever opened them, the listing has list semantics, buttons have accessible names, status and toasts are live regions |
+| links | sort, direction, view and the search query live in the location hash, so a reload or a shared URL reproduces the view |
 | responsive | single-column layout with an overlay folder drawer on phones |
 
 ![dark theme](modern-ui/grid-dark.png)
@@ -66,6 +69,7 @@ copyparty/web/ui/
   boot.js     classic script; injects the stylesheet and the module entrypoint
   main.js     application: shell, views, navigation, dialogs, previews
   api.js      http layer against copyparty's existing endpoints
+  up2k.js     resumable chunked uploader (sha-512 chunk hashes + wark)
   dom.js      escaping, formatting, file-type helpers
   icons.js    inline svg icon set
   ui.css      design tokens, light/dark themes, layout, components
@@ -83,7 +87,7 @@ keep working:
 | delete | `POST <vpath>?delete` |
 | global search | `POST /?srch` (json body) |
 | login / logout | `POST act=login` / `act=logout` |
-| upload | `POST act=bput` (multipart, one file per request) |
+| upload | up2k handshake + chunk `POST`s to the folder, or `POST act=bput` as a fallback |
 
 The classic page stays mounted but hidden, so copyparty's own javascript never
 sees its DOM disappear.
@@ -103,15 +107,32 @@ Everything else is additive; the fork rebases cleanly onto upstream.
 
 ## limitations
 
-* **uploads use the classic `bput` uploader**, not up2k. They show real
-  progress and cancel properly, but they are not resumable and not chunked.
-  Large-file uploads are the next thing to port.
+* **resumable uploads need a secure context.** sha-512 comes from WebCrypto, which
+  browsers only expose on https or localhost. On a plain-http LAN the ui falls back
+  to the classic uploader and says so in the queue; nothing breaks, you just lose
+  resume and chunking.
 * **global search needs the server's index** (`--idx` / `e2dsa`); without it,
-  copyparty itself returns no hits, so the UI falls back to filtering the
-  current folder and says so.
-* **thumbnails need webdeps** (the same `pillow` etc. that the classic UI
-  needs). When the server has none, it answers with a placeholder image, which
-  this UI detects and replaces with a file-type icon.
+  copyparty itself returns no hits, so the ui filters the current folder and says so.
+* **thumbnails need webdeps.** On a bare source checkout copyparty answers `?th=`
+  with a 500, and the ui detects that and falls back to file-type icons. With the
+  official webdeps bundle (pip/docker/sfx/source-release) the same code shows
+  real thumbnails, but that path has not been exercised in this working tree.
+* **english only.** The classic ui ships ~30 translations; this one has none yet.
+* **not implemented yet:** shares, the text editor, tag editing, chmod, and
+  drag-to-move onto the folder tree. Everything else in the table above works.
+
+## tests
+
+`tests/test_webui.py` starts a real copyparty and checks the integration --
+flag, injection, `?b=u`, `?ls=1`, asset serving, traversal, and (when a chrome
+is available) that the bundle mounts and renders:
+
+```sh
+python3 -m pytest tests/test_webui.py -q
+```
+
+The browser flows (upload, preview, dialog focus, url state) were exercised
+against a live server with playwright during development.
 
 ## development
 
