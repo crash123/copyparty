@@ -91,7 +91,7 @@ function toast(msg, kind) {
 
 const SHELL = `
 <header class="cpm-top">
-	<button class="cpm-icon-btn cpm-burger" data-act="menu" title="Folders"></button>
+	<button class="cpm-icon-btn cpm-burger" data-act="menu" title="Folders" aria-label="Toggle folder sidebar"></button>
 	<a class="cpm-brand" href="#" data-act="home">
 		<span class="cpm-brand-mark"></span>
 		<span class="cpm-brand-name">copyparty</span>
@@ -103,16 +103,16 @@ const SHELL = `
 			<input id="cpm-q" type="text" role="searchbox" placeholder="Search files and folders" autocomplete="off" spellcheck="false" />
 			<button class="cpm-search-clear" data-act="clearq" title="Clear">${icon("close", 14)}</button>
 		</div>
-		<button class="cpm-icon-btn" data-act="view" id="cpm-view" title="Grid / list view"></button>
-		<button class="cpm-icon-btn" data-act="theme" id="cpm-theme" title="Toggle theme"></button>
-		<button class="cpm-btn cpm-accent" data-act="upload" id="cpm-upload-btn">${icon("upload", 16)}<span>Upload</span></button>
-		<button class="cpm-icon-btn cpm-user" data-act="account" id="cpm-user" title="Account"></button>
+		<button class="cpm-icon-btn" data-act="view" id="cpm-view" title="Grid / list view" aria-label="Toggle grid or list view"></button>
+		<button class="cpm-icon-btn" data-act="theme" id="cpm-theme" title="Toggle theme" aria-label="Toggle dark or light theme"></button>
+		<button class="cpm-btn cpm-accent" data-act="upload" id="cpm-upload-btn" aria-label="Upload files">${icon("upload", 16)}<span>Upload</span></button>
+		<button class="cpm-icon-btn cpm-user" data-act="account" id="cpm-user" title="Account" aria-label="Account and sign in"></button>
 	</div>
 </header>
 <aside class="cpm-side" id="cpm-side">
 	<div class="cpm-side-head">
 		<span>Folders</span>
-		<button class="cpm-icon-btn sm" data-act="newdir" title="New folder">${icon("folder-plus", 16)}</button>
+		<button class="cpm-icon-btn sm" data-act="newdir" title="New folder" aria-label="New folder">${icon("folder-plus", 16)}</button>
 	</div>
 	<div class="cpm-tree" id="cpm-tree"></div>
 	<div class="cpm-side-foot" id="cpm-side-foot"></div>
@@ -120,9 +120,9 @@ const SHELL = `
 <main class="cpm-main" id="cpm-main">
 	<div class="cpm-toolbar" id="cpm-toolbar"></div>
 	<div class="cpm-scroll" id="cpm-scroll">
-		<div class="cpm-files" id="cpm-files"></div>
+		<div class="cpm-files" id="cpm-files" role="list" aria-label="Files"></div>
 	</div>
-	<div class="cpm-status" id="cpm-status"></div>
+	<div class="cpm-status" id="cpm-status" role="status" aria-live="polite"></div>
 </main>
 <div class="cpm-drop" id="cpm-drop"><div class="cpm-drop-in">${icon(
 	"upload",
@@ -130,7 +130,7 @@ const SHELL = `
 )}<b>Drop files to upload</b><span id="cpm-drop-dir"></span></div></div>
 <section class="cpm-uploads" id="cpm-uploads"></section>
 <div class="cpm-modal-host" id="cpm-modal"></div>
-<div class="cpm-toasts" id="cpm-toasts"></div>
+<div class="cpm-toasts" id="cpm-toasts" role="status" aria-live="polite"></div>
 <input type="file" id="cpm-file" multiple hidden />
 `;
 
@@ -170,6 +170,47 @@ function applyTheme(t, elRoot) {
 	const b = root.querySelector ? root.querySelector("#cpm-theme") : null;
 	if (b) b.innerHTML = icon(t === "light" ? "sun" : "moon", 18);
 	store("theme", t);
+}
+
+/* ------------------------------------------------------------ url state */
+
+function readHash() {
+	const o = {};
+	const h = (doc.location.hash || "").replace(/^#/, "");
+	if (!h) return o;
+	h.split("&").forEach(function (kv) {
+		const i = kv.indexOf("=");
+		if (i < 0) return;
+		try {
+			o[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+		} catch (e) {}
+	});
+	return o;
+}
+
+function writeHash() {
+	const parts = [];
+	if (state.query) parts.push("q=" + encodeURIComponent(state.query));
+	if (state.sort.key !== "name" || state.sort.dir !== 1)
+		parts.push("sort=" + encodeURIComponent(state.sort.key), "dir=" + state.sort.dir);
+	if (state.view !== "grid") parts.push("view=" + state.view);
+	const url =
+		doc.location.pathname + doc.location.search + (parts.length ? "#" + parts.join("&") : "");
+	window.history.replaceState(window.history.state, "", url);
+}
+
+function applyHash(h) {
+	if (h.view === "list" || h.view === "grid") {
+		state.view = h.view;
+		doc.documentElement.classList.toggle("cpm-view-list", h.view === "list");
+		const vb = qs("#cpm-view");
+		if (vb) vb.innerHTML = icon(h.view === "grid" ? "list" : "grid", 18);
+	}
+	if (h.sort) {
+		state.sort.key = h.sort;
+		const d = parseInt(h.dir || "1", 10);
+		state.sort.dir = d === -1 ? -1 : 1;
+	}
 }
 
 /* ------------------------------------------------------------ navigation */
@@ -364,7 +405,8 @@ function renderToolbar() {
 			'<div class="cpm-grow"></div>' +
 			(can("move") ? '<button class="cpm-btn" data-act="move">Move</button>' : "") +
 			(can("delete") ? '<button class="cpm-btn danger" data-act="delete">Delete</button>' : "") +
-			'<button class="cpm-btn" data-act="download">Download</button>';
+			'<button class="cpm-btn" data-act="download">Download</button>' +
+			'<button class="cpm-btn" data-act="zip">Download .zip</button>';
 		tb.classList.add("cpm-tb-sel");
 		return;
 	}
@@ -397,7 +439,8 @@ function renderToolbar() {
 		"</div>" +
 		'<div class="cpm-grow"></div>' +
 		(can("write")
-			? '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>New folder</span></button>"
+			? '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>New folder</span></button>" +
+			  '<button class="cpm-btn" data-act="newfile">' + icon("text", 15) + "<span>New file</span></button>"
 			: "") +
 		'<div class="cpm-sort">' +
 		icon("list", 15) +
@@ -422,13 +465,18 @@ function renderToolbar() {
 		"</div>";
 }
 
-function renderFiles() {
+const PAGE = 200;
+
+function renderFiles(keepShown) {
 	const f = qs("#cpm-files");
 	f.setAttribute("data-view", state.view);
 
 	if (state.searching || state.hits) return renderSearchResults();
 
 	const items = sorted();
+	state.sortedItems = items;
+	if (!keepShown) state.shown = Math.min(items.length, PAGE);
+
 	if (!items.length) {
 		f.className = "cpm-files";
 		f.innerHTML =
@@ -440,13 +488,26 @@ function renderFiles() {
 		return;
 	}
 
+	const n = Math.min(items.length, state.shown || PAGE);
+	const more =
+		items.length > n
+			? '<div class="cpm-more" id="cpm-more"><button class="cpm-btn" data-act="more">' +
+			  "Show more (" + (items.length - n) + " remaining)</button></div>"
+			: "";
+
 	if (state.view === "grid") {
 		f.className = "cpm-files cpm-grid";
-		f.innerHTML = items.map(cardHtml).join("");
+		f.innerHTML = items.slice(0, n).map(cardHtml).join("") + more;
 	} else {
 		f.className = "cpm-files cpm-tablewrap";
-		f.innerHTML = tableHtml(items);
+		f.innerHTML = tableHtml(items.slice(0, n), more);
 	}
+}
+
+function showMore() {
+	if (!state.sortedItems) return;
+	state.shown = Math.min(state.sortedItems.length, (state.shown || PAGE) + PAGE);
+	renderFiles(true);
 }
 
 function cardHtml(it) {
@@ -464,8 +525,9 @@ function cardHtml(it) {
 		thumb = '<span class="cpm-thumb-ico">' + kindIcon(it.kind) + "</span>";
 	}
 	return (
-		'<div class="cpm-card' +
-		sel +
+		'<div class="cpm-card' + sel +
+		'" role="listitem" aria-label="' +
+		esc((it.isDir ? "folder " : "file ") + it.name + (it.isDir ? "" : ", " + fmtSize(it.sz))) +
 		'" data-vp="' +
 		esc(it.vp) +
 		'" data-kind="' +
@@ -487,7 +549,7 @@ function cardHtml(it) {
 	);
 }
 
-function tableHtml(items) {
+function tableHtml(items, more) {
 	const s = state.sort;
 	function th(key, label) {
 		const on = s.key === key;
@@ -546,6 +608,9 @@ function tableHtml(items) {
 				);
 			})
 			.join("") +
+		(more
+			? '<tr class="cpm-more-row"><td colspan="6">' + more + "</td></tr>"
+			: "") +
 		"</tbody></table>"
 	);
 }
@@ -969,13 +1034,31 @@ function statusText(u) {
 
 /* ---------------------------------------------------------------- modals */
 
+let lastFocus = null;
+
+function firstFocusable(host) {
+	return qsa(
+		'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+		host
+	).filter(function (e) {
+		return !e.disabled && e.offsetParent !== null;
+	})[0];
+}
+
 function closeModal() {
 	const h = qs("#cpm-modal");
 	h.classList.remove("on");
 	h.innerHTML = "";
+	if (lastFocus && lastFocus.isConnected) {
+		try {
+			lastFocus.focus();
+		} catch (e) {}
+	}
+	lastFocus = null;
 }
 
 function modal(title, bodyHtml, buttons) {
+	lastFocus = doc.activeElement;
 	const h = qs("#cpm-modal");
 	h.innerHTML =
 		'<div class="cpm-back"></div>' +
@@ -1006,6 +1089,10 @@ function modal(title, bodyHtml, buttons) {
 	h.classList.add("on");
 	qs(".cpm-back", h).onclick = closeModal;
 	qs("[data-close]", h).onclick = closeModal;
+	const f = firstFocusable(h);
+	if (f) setTimeout(function () {
+		f.focus();
+	}, 30);
 	return h;
 }
 
@@ -1064,6 +1151,35 @@ async function newFolderDialog() {
 	} catch (e) {
 		toast("Could not create folder: " + e.message, "err");
 	}
+}
+
+async function newFileDialog() {
+	const name = await promptDialog({
+		title: "New file",
+		label: "File name",
+		placeholder: "notes.md",
+		hint: "Include the extension, for example .md or .txt",
+		ok: "Create",
+	});
+	if (!name) return;
+	try {
+		await api.newMarkdown(state.vp, name);
+		toast("Created “" + name + "”");
+		refresh();
+	} catch (e) {
+		toast("Could not create file: " + e.message, "err");
+	}
+}
+
+function zipSelection() {
+	const items = selItems();
+	if (!items.length) return;
+	api.zipSelection(
+		state.vp,
+		items.map(function (i) {
+			return i.name;
+		})
+	);
 }
 
 async function renameDialog(it) {
@@ -1148,6 +1264,7 @@ function deleteDialog(items) {
 /* --------------------------------------------------------------- preview */
 
 async function openPreview(it) {
+	lastFocus = doc.activeElement;
 	const kind = it.kind;
 	const url = api.rawUrl(it.vp);
 	const h = qs("#cpm-modal");
@@ -1210,6 +1327,10 @@ async function openPreview(it) {
 	qs('[data-pv="download"]', h).onclick = function () {
 		download([it]);
 	};
+	const pvf = firstFocusable(h);
+	if (pvf) setTimeout(function () {
+		pvf.focus();
+	}, 30);
 
 	if (kind === "markdown" || kind === "text" || kind === "code") {
 		const box = qs(".cpm-pv-text", h);
@@ -1368,6 +1489,7 @@ function accountDialog() {
 function setView(v) {
 	state.view = v;
 	store("view", v);
+	writeHash();
 	doc.documentElement.classList.toggle("cpm-view-list", v === "list");
 	const b = qs("#cpm-view");
 	if (b) b.innerHTML = icon(v === "grid" ? "list" : "grid", 18);
@@ -1408,11 +1530,15 @@ function bind() {
 			} else if (a === "upload") qs("#cpm-file").click();
 			else if (a === "account") accountDialog();
 			else if (a === "newdir") newFolderDialog();
+			else if (a === "newfile") newFileDialog();
+			else if (a === "more") showMore();
+			else if (a === "zip") zipSelection();
 			else if (a === "clearq") {
 				qs("#cpm-q").value = "";
 				state.query = "";
 				state.hits = null;
 				state.searching = false;
+				writeHash();
 				renderFiles();
 			} else if (a === "clearsel") selectOnly(null);
 			else if (a === "delete") deleteDialog(selItems());
@@ -1420,6 +1546,7 @@ function bind() {
 			else if (a === "download") download(selItems());
 			else if (a === "sortdir") {
 				state.sort.dir *= -1;
+				writeHash();
 				renderToolbar();
 				renderFiles();
 			} else if (a === "menu") root.classList.toggle("side-open");
@@ -1556,6 +1683,7 @@ function bind() {
 	qs("#cpm-q").addEventListener("input", function (e) {
 		const q = e.target.value.trim();
 		state.query = q;
+		writeHash();
 		if (!q) {
 			state.hits = null;
 			state.searching = false;
@@ -1602,6 +1730,7 @@ function bind() {
 	root.addEventListener("change", function (e) {
 		if (e.target.id === "cpm-sortsel") {
 			state.sort.key = e.target.value;
+			writeHash();
 			renderFiles();
 		}
 	});
@@ -1609,7 +1738,35 @@ function bind() {
 	/* keyboard */
 	doc.addEventListener("keydown", function (e) {
 		const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "").toUpperCase());
+		if (e.key === "Tab") {
+			const host = qs("#cpm-modal");
+			if (host.classList.contains("on")) {
+				const f = qsa(
+					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+					host
+				).filter(function (x) {
+					return !x.disabled && x.offsetParent !== null;
+				});
+				if (f.length) {
+					const first = f[0],
+						last = f[f.length - 1];
+					if (e.shiftKey && doc.activeElement === first) {
+						e.preventDefault();
+						last.focus();
+					} else if (!e.shiftKey && doc.activeElement === last) {
+						e.preventDefault();
+						first.focus();
+					}
+				}
+			}
+			return;
+		}
+
 		if (e.key === "Escape") {
+			if (state.menu) {
+				closeMenu();
+				return;
+			}
 			if (qs("#cpm-modal").classList.contains("on")) {
 				closeModal();
 				return;
@@ -1632,6 +1789,18 @@ function bind() {
 			return;
 		}
 		if (typing) return;
+
+		if (e.key.indexOf("Arrow") === 0) {
+			const nodes = qsa("#cpm-files [data-vp]");
+			const i = nodes.indexOf(doc.activeElement);
+			if (i >= 0) {
+				e.preventDefault();
+				const d = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+				const nx = nodes[Math.max(0, Math.min(nodes.length - 1, i + d))];
+				if (nx) nx.focus();
+				return;
+			}
+		}
 
 		if (e.key === "/") {
 			e.preventDefault();
@@ -1671,6 +1840,25 @@ function bind() {
 		navigate(urlVp(), false);
 	});
 
+	window.addEventListener("hashchange", function () {
+		const h = readHash();
+		applyHash(h);
+		const qi = qs("#cpm-q");
+		if (h.q) {
+			qi.value = h.q;
+			state.query = h.q;
+			doSearch(h.q);
+		} else if (state.query) {
+			qi.value = "";
+			state.query = "";
+			state.hits = null;
+			state.localHits = [];
+			state.searching = false;
+			renderFiles();
+		}
+		renderToolbar();
+	});
+
 	window.addEventListener("scroll", closeMenu, true);
 }
 
@@ -1692,11 +1880,18 @@ function renderError(e) {
 /* ------------------------------------------------------------------ boot */
 
 async function boot() {
-	state.view = store("view") || (globalThis.ls0 && globalThis.ls0.cfg && globalThis.ls0.cfg.dgrid === "y" ? "grid" : "grid");
+	state.view = store("view") || "grid";
+	const hash = readHash();
+	applyHash(hash);
 	state.perms = (globalThis.perms || []).slice();
 	state.srvinf = "";
 	mount();
 	await navigate(urlVp(), false);
+	if (hash.q) {
+		qs("#cpm-q").value = hash.q;
+		state.query = hash.q;
+		doSearch(hash.q);
+	}
 }
 
 boot();

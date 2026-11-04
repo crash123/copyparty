@@ -94,6 +94,32 @@ export async function move(srcVp, dstVp) {
 	});
 }
 
+/** download the given names (relative to vp) as one archive */
+export function zipSelection(vp, names) {
+	const frm = document.createElement("form");
+	frm.method = "post";
+	frm.enctype = "multipart/form-data";
+	frm.target = "_blank";
+	frm.action = withK(vpUrl(vp) + "?zip");
+	frm.style.display = "none";
+
+	const act = document.createElement("input");
+	act.type = "hidden";
+	act.name = "act";
+	act.value = "zip";
+	const ta = document.createElement("textarea");
+	ta.name = "files";
+	ta.value = names.join("\n");
+
+	frm.appendChild(act);
+	frm.appendChild(ta);
+	document.body.appendChild(frm);
+	frm.submit();
+	setTimeout(function () {
+		frm.remove();
+	}, 2000);
+}
+
 export async function remove(vp) {
 	return req(vpUrl(vp) + "?delete", { method: "POST" });
 }

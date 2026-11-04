@@ -15,7 +15,7 @@
 	--cpm-border: #e3e6ec;
 	--cpm-fg: #0f172a;
 	--cpm-fg-2: #475569;
-	--cpm-muted: #7b8798;
+	--cpm-muted: #66707e;
 	--cpm-danger: #dc2626;
 	--cpm-ok: #16a34a;
 	--cpm-radius: 12px;
@@ -1623,4 +1623,24 @@ html.cpm-active body {
 		padding-left: 9px;
 		padding-right: 9px;
 	}
+}
+
+
+/* ---------------------------------------------------- incremental listing */
+
+.cpm-more {
+	grid-column: 1 / -1;
+	display: flex;
+	justify-content: center;
+	padding: 16px 0 8px;
+}
+
+.cpm-more-row td {
+	text-align: center;
+	padding: 14px;
+	border-bottom: 0;
+}
+
+.cpm-more-row .cpm-btn {
+	margin: 0 auto;
 }
