@@ -22,7 +22,10 @@
 	try {
 		if (!window.fetch || !window.Promise || !window.HTMLScriptElement) return;
 
-		if (!document.getElementById("cpm-css")) {
+		// --modern-ui already injects the stylesheet through the page template
+		var have = document.getElementById("cpm-css") ||
+			document.querySelector('link[href*="/ui/ui.css"]');
+		if (!have) {
 			var css = document.createElement("link");
 			css.id = "cpm-css";
 			css.rel = "stylesheet";
