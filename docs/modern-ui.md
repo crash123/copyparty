@@ -118,10 +118,11 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   resume and chunking.
 * **global search needs the server's index** (`--idx` / `e2dsa`); without it,
   copyparty itself returns no hits, so the ui filters the current folder and says so.
-* **thumbnails need webdeps.** On a bare source checkout copyparty answers `?th=`
-  with a 500, and the ui detects that and falls back to file-type icons. With the
-  official webdeps bundle (pip/docker/sfx/source-release) the same code shows
-  real thumbnails, but that path has not been exercised in this working tree.
+* **thumbnails could not be verified here.** `?th=` answers 500 on this machine
+  for every size and format, both before and after installing the official
+  webdeps bundle, so the failure is server-side (this checkout runs CPython
+  3.14). The ui probes `?th=` once per session and falls back to file-type
+  icons when it is not usable; that degradation is verified.
 * **english and german only.** The classic ui ships ~30 translations; adding
   another language means adding one dictionary to `web/ui/i18n.js` (english
   strings are the keys). The language follows copyparty's own setting
