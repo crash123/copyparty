@@ -239,7 +239,8 @@ async function navigate(vp, push) {
 	if (qi) qi.value = "";
 
 	if (push !== false) {
-		const url = api.vpUrl(vp);
+		// keep the query string: it may carry a dirkey (?k=) or a password
+		const url = api.vpUrl(vp) + doc.location.search;
 		if (url !== doc.location.pathname + doc.location.search)
 			window.history.pushState({ vp: vp }, "", url);
 	}

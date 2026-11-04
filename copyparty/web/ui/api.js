@@ -7,18 +7,20 @@
 
 export const SR = (typeof globalThis.SR === "string" ? globalThis.SR : "").replace(/\/$/, "");
 
-/** dirkey passed in the url (?k=...), must be replayed on every request */
-const DIRKEY = (function () {
+/** dirkey passed in the url (?k=...); read fresh each time, because following
+ *  a link into a differently-keyed volume changes it mid-session */
+function dirkey() {
 	try {
 		return new URLSearchParams(location.search).get("k");
 	} catch (e) {
 		return null;
 	}
-})();
+}
 
 export function withK(url) {
-	if (!DIRKEY) return url;
-	return url + (url.indexOf("?") === -1 ? "?" : "&") + "k=" + encodeURIComponent(DIRKEY);
+	const k = dirkey();
+	if (!k) return url;
+	return url + (url.indexOf("?") === -1 ? "?" : "&") + "k=" + encodeURIComponent(k);
 }
 
 /** percent-encode a vpath, keeping the slashes intact */
