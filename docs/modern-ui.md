@@ -50,6 +50,7 @@ copyparty \
 | upload | drag-and-drop anywhere (or the Upload button): resumable, chunked up2k uploads when the page is on https or localhost, falling back to the classic multipart uploader otherwise; per-file hashing/sending progress, cancel and retry |
 | big folders | entries are rendered 200 at a time with a "show more" control |
 | editor | edit text/code/markdown in a monospace dialog (ctrl/cmd-s saves) |
+| move | drag a file or folder onto the tree / breadcrumb, or use Move to... |
 | shares | create a read-only share link with an optional password and expiry, when the server has `--shr` configured |
 | tags | shows a Tags column when the server has a tag index |
 | auth | sign in / sign out, per-user permissions, `--usernames` and password-only servers both supported |
@@ -129,7 +130,7 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   (`cplng` cookie / page `lang`), and can be changed in the account dialog.
 * **tag editing and chmod are not implemented.** copyparty does not expose
   either over its http api, so there is nothing to call.
-* **drag-to-move onto the folder tree** is not implemented; use Move to...
+* dragging files/folders onto the folder tree (or a breadcrumb) moves them.
 
 ## tests
 

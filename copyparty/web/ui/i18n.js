@@ -125,6 +125,7 @@ const DE = {
 	Link: "Link",
 	Language: "Sprache",
 	"Sort direction": "Sortierrichtung",
+	"You cannot move a folder into itself": "Ein Ordner kann nicht in sich selbst verschoben werden",
 	"1 hour": "1 Stunde",
 	"1 day": "1 Tag",
 	"1 week": "1 Woche",

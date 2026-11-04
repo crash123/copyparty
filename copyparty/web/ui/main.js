@@ -540,7 +540,7 @@ function cardHtml(it) {
 	}
 	return (
 		'<div class="cpm-card' + sel +
-		'" role="listitem" aria-label="' +
+		'" role="listitem" draggable="true" aria-label="' +
 		esc((it.isDir ? "folder " : "file ") + it.name + (it.isDir ? "" : ", " + fmtSize(it.sz))) +
 		'" data-vp="' +
 		esc(it.vp) +
@@ -599,7 +599,7 @@ function tableHtml(items, more) {
 					esc(it.vp) +
 					'" data-kind="' +
 					it.kind +
-					'" tabindex="0">' +
+					'" tabindex="0" draggable="true">' +
 					'<td class="cpm-th-sel"><input type="checkbox" class="cpm-ck"' +
 					(sel ? " checked" : "") +
 					" /></td>" +
@@ -1338,6 +1338,25 @@ function sharesEnabled() {
 	return !!state.cfg && state.cfg.shr_who && state.cfg.shr_who !== "no";
 }
 
+async function moveItem(srcVp, dstDir) {
+	const name = srcVp.replace(/\/+$/, "").split("/").pop();
+	if (!name) return;
+	const parent = api.parentVp(srcVp);
+	if (dstDir === parent) return;
+	if (dstDir.indexOf(srcVp.replace(/\/+$/, "") + "/") === 0) {
+		toast(t("You cannot move a folder into itself"), "err");
+		return;
+	}
+	try {
+		await api.move(srcVp, api.joinVp(dstDir, name));
+		toast(t("Moved"));
+		state.sel.clear();
+		refresh();
+	} catch (e) {
+		toast(t("Move failed: ") + e.message, "err");
+	}
+}
+
 function zipSelection() {
 	const items = selItems();
 	if (!items.length) return;
@@ -1963,6 +1982,60 @@ function bind() {
 	qs("#cpm-file").addEventListener("change", function (e) {
 		uploadFiles(e.target.files);
 		e.target.value = "";
+	});
+
+	/* drag a file onto a folder to move it */
+	root.addEventListener("dragstart", function (e) {
+		const item = e.target.closest("#cpm-files [data-vp]");
+		if (!item || !can("move")) return;
+		state.dragVp = item.getAttribute("data-vp");
+		try {
+			e.dataTransfer.effectAllowed = "move";
+			e.dataTransfer.setData("text/plain", state.dragVp);
+		} catch (ex) {}
+	});
+
+	function dropTarget(e) {
+		const t = e.target.closest("#cpm-tree [data-tvp], #cpm-crumbs [data-vp]");
+		return t;
+	}
+
+	root.addEventListener("dragover", function (e) {
+		if (!state.dragVp) return;
+		const t = dropTarget(e);
+		if (!t) return;
+		e.preventDefault();
+		try {
+			e.dataTransfer.dropEffect = "move";
+		} catch (ex) {}
+		if (state.dropEl && state.dropEl !== t) state.dropEl.classList.remove("cpm-drop-target");
+		state.dropEl = t;
+		t.classList.add("cpm-drop-target");
+	});
+
+	function clearDrop() {
+		if (state.dropEl) state.dropEl.classList.remove("cpm-drop-target");
+		state.dropEl = null;
+	}
+
+	root.addEventListener("dragleave", function (e) {
+		if (!e.target.closest("#cpm-tree, #cpm-crumbs")) clearDrop();
+	});
+
+	root.addEventListener("drop", function (e) {
+		const src = state.dragVp;
+		const t = src ? dropTarget(e) : null;
+		clearDrop();
+		if (!src || !t) return;
+		e.preventDefault();
+		state.dragVp = null;
+		const dst = t.getAttribute("data-tvp") || t.getAttribute("data-vp");
+		if (dst) moveItem(src, dst);
+	});
+
+	root.addEventListener("dragend", function () {
+		state.dragVp = null;
+		clearDrop();
 	});
 
 	/* drag & drop */
