@@ -55,6 +55,7 @@ copyparty \
 | auth | sign in / sign out, per-user permissions, `--usernames` and password-only servers both supported |
 | theming | dark and light, follows the OS by default, remembered per browser |
 | keyboard | `/` search, `Esc` close/clear, `Backspace` up one folder, `F2` rename, `Delete` delete, `Ctrl/Cmd-A` select all, `Enter` open, arrows walk the listing |
+| languages | english and german, following the server's language setting, switchable in the account dialog |
 | accessibility | dialogs take and trap focus and return it to whatever opened them, the listing has list semantics, buttons have accessible names, status and toasts are live regions |
 | links | sort, direction, view and the search query live in the location hash, so a reload or a shared URL reproduces the view |
 | responsive | single-column layout with an overlay folder drawer on phones |
@@ -73,6 +74,7 @@ copyparty/web/ui/
   main.js     application: shell, views, navigation, dialogs, previews
   api.js      http layer against copyparty's existing endpoints
   up2k.js     resumable chunked uploader (sha-512 chunk hashes + wark)
+  i18n.js     english-keyed translation table (en/de)
   dom.js      escaping, formatting, file-type helpers
   icons.js    inline svg icon set
   ui.css      design tokens, light/dark themes, layout, components
@@ -120,7 +122,10 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   with a 500, and the ui detects that and falls back to file-type icons. With the
   official webdeps bundle (pip/docker/sfx/source-release) the same code shows
   real thumbnails, but that path has not been exercised in this working tree.
-* **english only.** The classic ui ships ~30 translations; this one has none yet.
+* **english and german only.** The classic ui ships ~30 translations; adding
+  another language means adding one dictionary to `web/ui/i18n.js` (english
+  strings are the keys). The language follows copyparty's own setting
+  (`cplng` cookie / page `lang`), and can be changed in the account dialog.
 * **tag editing and chmod are not implemented.** copyparty does not expose
   either over its http api, so there is nothing to call.
 * **drag-to-move onto the folder tree** is not implemented; use Move to...

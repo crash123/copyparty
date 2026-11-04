@@ -20,6 +20,10 @@ import {
 } from "./dom.js";
 import { icon, kindIcon } from "./icons.js";
 import * as up2k from "./up2k.js";
+import { t, initLang, setLang, langs, curLang } from "./i18n.js";
+
+// must run before any template below is evaluated
+initLang();
 
 const doc = document;
 const LS = (function () {
@@ -93,7 +97,7 @@ function toast(msg, kind) {
 
 const SHELL = `
 <header class="cpm-top">
-	<button class="cpm-icon-btn cpm-burger" data-act="menu" title="Folders" aria-label="Toggle folder sidebar"></button>
+	<button class="cpm-icon-btn cpm-burger" data-act="menu" title="${t(t("Folders"))}" aria-label="${t("Toggle folder sidebar")}"></button>
 	<a class="cpm-brand" href="#" data-act="home">
 		<span class="cpm-brand-mark"></span>
 		<span class="cpm-brand-name">copyparty</span>
@@ -102,19 +106,19 @@ const SHELL = `
 	<div class="cpm-actions">
 		<div class="cpm-search">
 			<span class="cpm-search-ico"></span>
-			<input id="cpm-q" type="text" role="searchbox" placeholder="Search files and folders" autocomplete="off" spellcheck="false" />
-			<button class="cpm-search-clear" data-act="clearq" title="Clear">${icon("close", 14)}</button>
+			<input id="cpm-q" type="text" role="searchbox" placeholder="${t("Search files and folders")}" autocomplete="off" spellcheck="false" />
+			<button class="cpm-search-clear" data-act="clearq" title="${t("Clear")}">${icon("close", 14)}</button>
 		</div>
-		<button class="cpm-icon-btn" data-act="view" id="cpm-view" title="Grid / list view" aria-label="Toggle grid or list view"></button>
-		<button class="cpm-icon-btn" data-act="theme" id="cpm-theme" title="Toggle theme" aria-label="Toggle dark or light theme"></button>
-		<button class="cpm-btn cpm-accent" data-act="upload" id="cpm-upload-btn" aria-label="Upload files">${icon("upload", 16)}<span>Upload</span></button>
-		<button class="cpm-icon-btn cpm-user" data-act="account" id="cpm-user" title="Account" aria-label="Account and sign in"></button>
+		<button class="cpm-icon-btn" data-act="view" id="cpm-view" title="${t("Toggle grid or list view")}" aria-label="${t("Toggle grid or list view")}"></button>
+		<button class="cpm-icon-btn" data-act="theme" id="cpm-theme" title="${t("Toggle theme")}" aria-label="${t("Toggle dark or light theme")}"></button>
+		<button class="cpm-btn cpm-accent" data-act="upload" id="cpm-upload-btn" aria-label="${t("Upload files")}">${icon("upload", 16)}<span>${t("Upload")}</span></button>
+		<button class="cpm-icon-btn cpm-user" data-act="account" id="cpm-user" title="${t(t("Account"))}" aria-label="${t("Account and sign in")}"></button>
 	</div>
 </header>
 <aside class="cpm-side" id="cpm-side">
 	<div class="cpm-side-head">
-		<span>Folders</span>
-		<button class="cpm-icon-btn sm" data-act="newdir" title="New folder" aria-label="New folder">${icon("folder-plus", 16)}</button>
+		<span>${t(t("Folders"))}</span>
+		<button class="cpm-icon-btn sm" data-act="newdir" title="${t("New folder")}" aria-label="${t("New folder")}">${icon("folder-plus", 16)}</button>
 	</div>
 	<div class="cpm-tree" id="cpm-tree"></div>
 	<div class="cpm-side-foot" id="cpm-side-foot"></div>
@@ -404,13 +408,16 @@ function renderToolbar() {
 		tb.innerHTML =
 			'<div class="cpm-selinfo"><b>' +
 			n +
-			"</b> selected" +
-			'<button class="cpm-link" data-act="clearsel">clear</button></div>' +
+			"</b> " +
+			t("selected") +
+			'<button class="cpm-link" data-act="clearsel">' +
+			t("clear") +
+			"</button></div>" +
 			'<div class="cpm-grow"></div>' +
-			(can("move") ? '<button class="cpm-btn" data-act="move">Move</button>' : "") +
-			(can("delete") ? '<button class="cpm-btn danger" data-act="delete">Delete</button>' : "") +
-			'<button class="cpm-btn" data-act="download">Download</button>' +
-			'<button class="cpm-btn" data-act="zip">Download .zip</button>';
+			(can("move") ? '<button class="cpm-btn" data-act="move">' + t(t("Move")) + "</button>" : "") +
+			(can("delete") ? '<button class="cpm-btn danger" data-act="delete">' + t(t("Delete")) + "</button>" : "") +
+			'<button class="cpm-btn" data-act="download">' + t("Download") + "</button>" +
+			'<button class="cpm-btn" data-act="zip">' + t("Download .zip") + "</button>";
 		tb.classList.add("cpm-tb-sel");
 		return;
 	}
@@ -421,22 +428,22 @@ function renderToolbar() {
 	}).length;
 	const files = state.items.length - dirs;
 	const parts = [];
-	if (dirs) parts.push(dirs + (dirs === 1 ? " folder" : " folders"));
-	if (files) parts.push(files + (files === 1 ? " file" : " files"));
-	if (!parts.length) parts.push("Empty folder");
+	if (dirs) parts.push(dirs + " " + (dirs === 1 ? t("folder") : t("folders")));
+	if (files) parts.push(files + " " + (files === 1 ? t("file") : t("files")));
+	if (!parts.length) parts.push(t(t("Empty folder")));
 
 	const sortOpts = [
-		["name", "Name"],
-		["size", "Size"],
-		["date", "Date"],
-		["type", "Type"],
+		["name", t("Name")],
+		["size", t("Size")],
+		["date", t("Date")],
+		["type", t("Type")],
 	];
 
 	tb.innerHTML =
 		'<div class="cpm-tb-path" title="' +
 		esc(state.vp) +
 		'">' +
-		esc(api.vpName(state.vp) === "/" ? "Home" : api.vpName(state.vp)) +
+		esc(api.vpName(state.vp) === "/" ? t(t("Home")) : api.vpName(state.vp)) +
 		"</div>" +
 		'<div class="cpm-tb-count">' +
 		esc(parts.join(" · ")) +
@@ -444,10 +451,10 @@ function renderToolbar() {
 		'<div class="cpm-grow"></div>' +
 		(can("write")
 			? (sharesEnabled()
-					? '<button class="cpm-btn" data-act="sharefolder">' + icon("user", 15) + "<span>Share</span></button>"
+					? '<button class="cpm-btn" data-act="sharefolder">' + icon("user", 15) + "<span>" + t("Share") + "</span></button>"
 					: "") +
-			  '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>New folder</span></button>" +
-			  '<button class="cpm-btn" data-act="newfile">' + icon("text", 15) + "<span>New file</span></button>"
+			  '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>" + t("New folder") + "</span></button>" +
+			  '<button class="cpm-btn" data-act="newfile">' + icon("text", 15) + "<span>" + t("New file") + "</span></button>"
 			: "") +
 		'<div class="cpm-sort">' +
 		icon("list", 15) +
@@ -460,7 +467,7 @@ function renderToolbar() {
 					'"' +
 					(state.sort.key === o[0] ? " selected" : "") +
 					">" +
-					o[1] +
+					t(o[1]) +
 					"</option>"
 				);
 			})
@@ -489,8 +496,8 @@ function renderFiles(keepShown) {
 		f.innerHTML =
 			'<div class="cpm-empty">' +
 			icon("folder", 44) +
-			"<b>Nothing here yet</b>" +
-			(can("write") ? "<span>Drop files anywhere to upload them.</span>" : "") +
+			"<b>" + t("Nothing here yet") + "</b>" +
+			(can("write") ? "<span>" + t("Drop files anywhere to upload them.") + "</span>" : "") +
 			"</div>";
 		return;
 	}
@@ -575,11 +582,11 @@ function tableHtml(items, more) {
 	return (
 		'<table class="cpm-table"><thead><tr>' +
 		'<th class="cpm-th-sel"><input type="checkbox" id="cpm-selall" /></th>' +
-		th("name", "Name") +
-		th("size", "Size") +
-		th("type", "Type") +
+		th("name", t("Name")) +
+		th("size", t("Size")) +
+		th("type", t("Type")) +
 		(state.taglist.length ? '<th class="cpm-th-tags">Tags</th>' : "") +
-		th("date", "Modified") +
+		th("date", t("Modified")) +
 		'<th class="cpm-th-act"></th>' +
 		"</tr></thead><tbody>" +
 		items
@@ -639,13 +646,13 @@ function tableHtml(items, more) {
 function renderStatus() {
 	const st = qs("#cpm-status");
 	if (state.loading) {
-		st.innerHTML = '<span class="cpm-spin"></span> loading…';
+		st.innerHTML = '<span class="cpm-spin"></span> ' + t("loading…");
 		return;
 	}
 	const n = state.items.length;
 	const sel = state.sel.size;
-	let html = n + (n === 1 ? " item" : " items");
-	if (sel) html += " · " + sel + " selected";
+	let html = n + " " + (n === 1 ? t("item") : t("items"));
+	if (sel) html += " · " + sel + " " + t("selected");
 	const si = (state.srvinf || "").replace(/<[^>]*>/g, " // ").replace(/\s+/g, " ").trim();
 	if (si) html += " · " + esc(si);
 	st.innerHTML = html;
@@ -667,7 +674,7 @@ function renderSideFoot() {
 function renderAccount() {
 	const b = qs("#cpm-user");
 	b.innerHTML = icon("user", 18);
-	b.title = state.acct === "*" ? "Sign in" : state.acct;
+	b.title = state.acct === "*" ? t("Sign in") : state.acct;
 }
 
 /* ---------------------------------------------------------------- search */
@@ -693,7 +700,7 @@ const doSearch = debounce(async function (q) {
 		state.trunc = !!r.trunc;
 	} catch (e) {
 		state.hits = [];
-		toast("Search failed: " + e.message, "err");
+		toast(t("Search failed: ") + e.message, "err");
 	} finally {
 		state.searching = false;
 		renderFiles();
@@ -716,16 +723,26 @@ function renderSearchResults() {
 		f.innerHTML =
 			'<div class="cpm-empty">' +
 			icon("search", 40) +
-			"<b>No matches</b><span>Global search needs the server's file index; " +
-			"on this server only the current folder can be searched.</span></div>";
+			"<b>" + t("No matches") + "</b><span>" +
+			t("Global search needs the server's file index; on this server only the current folder can be searched.") +
+			"</span></div>";
 		return;
 	}
 
-	let html = '<div class="cpm-srch-head">' + total + " result" + (total === 1 ? "" : "s") + "</div>";
-	if (state.searching) html = '<div class="cpm-srch-head"><span class="cpm-spin"></span> searching the whole server…</div>';
+	let html =
+		'<div class="cpm-srch-head">' +
+		total +
+		" " +
+		(total === 1 ? t("result") : t("results")) +
+		"</div>";
+	if (state.searching)
+		html =
+			'<div class="cpm-srch-head"><span class="cpm-spin"></span> ' +
+			t("searching the whole server…") +
+			"</div>";
 
 	if (local.length) {
-		html += '<div class="cpm-srch-sec">In this folder</div>';
+		html += '<div class="cpm-srch-sec">' + t("In this folder") + "</div>";
 		html += local
 			.map(function (it) {
 				return (
@@ -749,7 +766,7 @@ function renderSearchResults() {
 	}
 
 	if (hits.length) {
-		html += '<div class="cpm-srch-sec">Everywhere on this server</div>';
+		html += '<div class="cpm-srch-sec">' + t("Everywhere on this server") + "</div>";
 		html += hits
 			.map(function (h) {
 				let rp = h.rp || "";
@@ -838,7 +855,7 @@ function treeLevel(vp, depth) {
 		'">' +
 		icon("folder", 16) +
 		"<span>" +
-		esc(vp === "/" ? "Home" : api.vpName(vp)) +
+		esc(vp === "/" ? t("Home") : api.vpName(vp)) +
 		"</span></a></div>";
 	if (open && kids && kids.length) {
 		kids
@@ -867,14 +884,14 @@ function openMenu(vp, x, y) {
 	const it = itemByVp(vp);
 	if (!it) return;
 	const acts = [];
-	acts.push(["open", it.isDir ? "Open folder" : "Open", "chevron"]);
+	acts.push(["open", it.isDir ? t("Open folder") : t("Open"), "chevron"]);
 	acts.push(["download", "Download", "download"]);
-	if (can("read") && sharesEnabled()) acts.push(["share", "Share link", "user"]);
+	if (can("read") && sharesEnabled()) acts.push(["share", t("Share link"), "user"]);
 	if (can("write") && (it.kind === "text" || it.kind === "code" || it.kind === "markdown"))
-		acts.push(["edit", "Edit text", "edit"]);
-	if (can("move")) acts.push(["rename", "Rename", "edit"]);
+		acts.push(["edit", t("Edit text"), "edit"]);
+	if (can("move")) acts.push(["rename", t("Rename"), "edit"]);
 	if (can("move")) acts.push(["move", "Move to…", "folder"]);
-	if (can("delete")) acts.push(["delete", "Delete", "trash"]);
+	if (can("delete")) acts.push(["delete", t("Delete"), "trash"]);
 
 	const m = el(
 		"div",
@@ -887,7 +904,7 @@ function openMenu(vp, x, y) {
 					'">' +
 					icon(a[2], 15) +
 					"<span>" +
-					a[1] +
+					t(a[1]) +
 					"</span></button>"
 				);
 			})
@@ -1030,7 +1047,7 @@ function runUpload(batch, i, vp) {
 		.catch(function (e) {
 			u.status = e.name === "AbortError" ? "cancelled" : "error";
 			u.err = e.message;
-			if (e.name !== "AbortError") toast("Upload failed: " + e.message, "err");
+			if (e.name !== "AbortError") toast(t("Upload failed: ") + e.message, "err");
 		})
 		.then(done);
 }
@@ -1065,7 +1082,7 @@ function renderUploads() {
 	box.classList.add("on");
 	box.innerHTML =
 		'<div class="cpm-up-head">' +
-		"<b>Uploading</b> <span>" +
+		"<b>" + t("Uploading") + "</b> <span>" +
 		done +
 		"/" +
 		total +
@@ -1073,7 +1090,9 @@ function renderUploads() {
 		'<div class="cpm-grow"></div>' +
 		(done === total ? '<button class="cpm-icon-btn sm" data-act="hideups">' + icon("close", 14) + "</button>" : "") +
 		"</div>" +
-		(up2k.supported() ? "" : '<div class="cpm-up-note">resumable uploads need https (or localhost)</div>') +
+		(up2k.supported()
+			? ""
+			: '<div class="cpm-up-note">' + t("resumable uploads need https (or localhost)") + "</div>") +
 		'<div class="cpm-up-list">' +
 		state.uploads
 			.map(function (u, i) {
@@ -1092,12 +1111,12 @@ function renderUploads() {
 					esc(statusText(u)) +
 					"</div>" +
 					(u.status === "uploading" || u.status === "queued"
-						? '<button class="cpm-icon-btn sm" data-cancel="' + i + '" title="Cancel" aria-label="Cancel upload">' +
+						? '<button class="cpm-icon-btn sm" data-cancel="' + i + '" title=t("Cancel") aria-label=t("Cancel upload")>' +
 						  icon("close", 13) +
 						  "</button>"
 						: "") +
 					(u.status === "error" || u.status === "cancelled"
-						? '<button class="cpm-icon-btn sm" data-retry="' + i + '" title="Retry" aria-label="Retry upload">' +
+						? '<button class="cpm-icon-btn sm" data-retry="' + i + '" title=t("Retry") aria-label=t("Retry upload")>' +
 						  icon("refresh", 13) +
 						  "</button>"
 						: "") +
@@ -1109,14 +1128,14 @@ function renderUploads() {
 }
 
 function statusText(u) {
-	if (u.status === "queued") return "waiting";
+	if (u.status === "queued") return t("waiting");
 	if (u.status === "done") {
-		if (u.dedup) return "done (already on server)";
-		return u.resumed ? "done (resumed)" : "done";
+		if (u.dedup) return t("done (already on server)");
+		return u.resumed ? t("done (resumed)") : t("done");
 	}
-	if (u.status === "cancelled") return "cancelled";
-	if (u.status === "error") return u.err || "failed";
-	if (u.phase === "hash") return "hashing " + u.pct + "%";
+	if (u.status === "cancelled") return t("cancelled");
+	if (u.status === "error") return u.err || t("failed");
+	if (u.phase === "hash") return t("hashing") + " " + u.pct + "%";
 	return u.pct + "%";
 }
 
@@ -1189,7 +1208,7 @@ function promptDialog(opts) {
 		const h = modal(
 			opts.title,
 			'<label class="cpm-field"><span>' +
-				esc(opts.label || "Name") +
+				esc(opts.label || t("Name")) +
 				'</span><input id="cpm-prompt-in" type="text" value="' +
 				esc(opts.value || "") +
 				'" placeholder="' +
@@ -1197,8 +1216,8 @@ function promptDialog(opts) {
 				'" /></label>' +
 				(opts.hint ? '<p class="cpm-hint">' + esc(opts.hint) + "</p>" : ""),
 			[
-				{ id: "cancel", label: "Cancel" },
-				{ id: "ok", label: opts.ok || "OK", kind: "cpm-accent" },
+				{ id: "cancel", label: t("Cancel") },
+				{ id: "ok", label: opts.ok || t("OK"), kind: "cpm-accent" },
 			]
 		);
 		const inp = qs("#cpm-prompt-in", h);
@@ -1226,28 +1245,28 @@ function promptDialog(opts) {
 
 async function newFolderDialog() {
 	const name = await promptDialog({
-		title: "New folder",
-		label: "Folder name",
+		title: t("New folder"),
+		label: t(t("Folder name")),
 		placeholder: "awesome mix vol.1",
-		ok: "Create",
+		ok: t("Create"),
 	});
 	if (!name) return;
 	try {
 		await api.mkdir(state.vp, name);
-		toast("Created “" + name + "”");
+		toast(t("Created") + " “" + name + "”");
 		refresh();
 	} catch (e) {
-		toast("Could not create folder: " + e.message, "err");
+		toast(t("Could not create folder: ") + e.message, "err");
 	}
 }
 
 async function newFileDialog() {
 	const name = await promptDialog({
-		title: "New file",
-		label: "File name",
+		title: t("New file"),
+		label: t(t("File name")),
 		placeholder: "notes.md",
-		hint: "Include the extension, for example .md or .txt",
-		ok: "Create",
+		hint: t("Include the extension, for example .md or .txt"),
+		ok: t("Create"),
 	});
 	if (!name) return;
 	try {
@@ -1255,7 +1274,7 @@ async function newFileDialog() {
 		toast("Created “" + name + "”");
 		refresh();
 	} catch (e) {
-		toast("Could not create file: " + e.message, "err");
+		toast(t("Could not create file: ") + e.message, "err");
 	}
 }
 
@@ -1268,15 +1287,19 @@ async function shareDialog(items) {
 
 	const h = modal(
 		"Share " + (items.length ? "“" + items[0].name + "”" : "this folder"),
-		'<p class="cpm-hint">Creates a read-only link. You can add a password and an expiry.</p>' +
-			'<label class="cpm-field"><span>Password (optional)</span><input id="cpm-shr-pw" type="text" autocomplete="off" /></label>' +
+		'<p class="cpm-hint">' +
+			t("Creates a read-only link. You can add a password and an expiry.") +
+			"</p>" +
+			'<label class="cpm-field"><span>' +
+			t("Password (optional)") +
+			'</span><input id="cpm-shr-pw" type="text" autocomplete="off" /></label>' +
 			'<label class="cpm-field"><span>Expires</span><select id="cpm-shr-exp">' +
 			'<option value="0">never</option><option value="3600">1 hour</option>' +
 			'<option value="86400">1 day</option><option value="604800">1 week</option>' +
 			"</select></label>",
 		[
-			{ id: "cancel", label: "Cancel" },
-			{ id: "ok", label: "Create link", kind: "cpm-accent" },
+			{ id: "cancel", label: t("Cancel") },
+			{ id: "ok", label: t("Create link"), kind: "cpm-accent" },
 		]
 	);
 
@@ -1287,7 +1310,7 @@ async function shareDialog(items) {
 		try {
 			const url = await api.createShare(vps, pw, exp);
 			qs(".cpm-dlg-body", h).innerHTML =
-				'<p class="cpm-hint">Share created. Anyone with this link can read it.</p>' +
+				'<p class="cpm-hint">' + t("Share created. Anyone with this link can read it.") + "</p>" +
 				'<label class="cpm-field"><span>Link</span><input id="cpm-shr-url" type="text" readonly /></label>';
 			qs("#cpm-shr-url", h).value = url;
 			qs("#cpm-shr-url", h).select();
@@ -1299,13 +1322,13 @@ async function shareDialog(items) {
 				const inp = qs("#cpm-shr-url", h);
 				inp.select();
 				if (navigator.clipboard) navigator.clipboard.writeText(url).then(
-					function () { toast("Link copied"); },
+					function () { toast(t("Link copied")); },
 					function () { toast("Press Ctrl/Cmd-C to copy", "err"); }
 				);
 				else toast("Press Ctrl/Cmd-C to copy", "err");
 			};
 		} catch (e) {
-			toast("Could not create share: " + e.message, "err");
+			toast(t("Could not create share: ") + e.message, "err");
 		}
 	};
 }
@@ -1328,40 +1351,40 @@ function zipSelection() {
 
 async function renameDialog(it) {
 	const name = await promptDialog({
-		title: "Rename",
-		label: "New name",
+		title: t(t("Rename")),
+		label: t(t("New name")),
 		value: it.name,
-		ok: "Rename",
+		ok: t("Rename"),
 	});
 	if (!name || name === it.name) return;
 	try {
 		await api.move(it.vp, api.joinVp(api.parentVp(it.vp), name));
-		toast("Renamed");
+		toast(t("Renamed"));
 		refresh();
 	} catch (e) {
-		toast("Rename failed: " + e.message, "err");
+		toast(t("Rename failed: ") + e.message, "err");
 	}
 }
 
 async function moveDialog(items) {
 	const dst = await promptDialog({
 		title: "Move " + items.length + (items.length === 1 ? " item" : " items"),
-		label: "Destination folder",
+		label: t(t("Destination folder")),
 		value: state.vp,
 		placeholder: "/music/2026",
-		hint: "Absolute path on this server. The name is kept.",
-		ok: "Move",
+		hint: t("Absolute path on this server. The name is kept."),
+		ok: t("Move"),
 	});
 	if (!dst) return;
 	const base = dst.endsWith("/") ? dst : dst + "/";
 	try {
 		for (let i = 0; i < items.length; i++)
 			await api.move(items[i].vp, base + items[i].name);
-		toast("Moved");
+		toast(t("Moved"));
 		state.sel.clear();
 		refresh();
 	} catch (e) {
-		toast("Move failed: " + e.message, "err");
+		toast(t("Move failed: ") + e.message, "err");
 	}
 }
 
@@ -1383,8 +1406,8 @@ function deleteDialog(items) {
 				? '<p class="cpm-warn">Folders are deleted recursively.</p>'
 				: ""),
 		[
-			{ id: "cancel", label: "Cancel" },
-			{ id: "ok", label: "Delete", kind: "danger" },
+			{ id: "cancel", label: t("Cancel") },
+			{ id: "ok", label: t("Delete"), kind: "danger" },
 		]
 	);
 	qs('[data-mbtn="cancel"]', h).onclick = closeModal;
@@ -1399,7 +1422,7 @@ function deleteDialog(items) {
 			}
 		}
 		if (failed) toast(failed + " item(s) could not be deleted", "err");
-		else toast("Deleted");
+		else toast(t("Deleted"));
 		state.sel.clear();
 		refresh();
 	};
@@ -1461,7 +1484,7 @@ async function openPreview(it) {
 			: "") +
 		'<button class="cpm-btn" data-pv="download">' +
 		icon("download", 15) +
-		"<span>Download</span></button>" +
+		"<span>" + t("Download") + "</span></button>" +
 		'<button class="cpm-icon-btn" data-pv="close">' +
 		icon("close", 18) +
 		"</button></div></div>" +
@@ -1510,16 +1533,16 @@ async function openEditor(it) {
 		if (!r.ok) throw new Error("HTTP " + r.status);
 		text = await r.text();
 	} catch (e) {
-		return toast("Could not open file: " + e.message, "err");
+		return toast(t("Could not open file: ") + e.message, "err");
 	}
 
 	const h = modal(
 		"Editing " + it.name,
 		'<label class="cpm-field"><span>Contents</span>' +
-			'<textarea id="cpm-editor" spellcheck="false" aria-label="File contents"></textarea></label>',
+			'<textarea id="cpm-editor" spellcheck="false" aria-label=t("File contents")></textarea></label>',
 		[
-			{ id: "cancel", label: "Cancel" },
-			{ id: "ok", label: "Save", kind: "cpm-accent" },
+			{ id: "cancel", label: t("Cancel") },
+			{ id: "ok", label: t("Save"), kind: "cpm-accent" },
 		]
 	);
 
@@ -1529,14 +1552,14 @@ async function openEditor(it) {
 		try {
 			const r = await api.saveText(it.vp, ta.value, lastmod);
 			if (r && r.ok === false) {
-				toast("The file changed on the server; reopen it and try again", "err");
+				toast(t("The file changed on the server; reopen it and try again"), "err");
 				return;
 			}
 			closeModal();
-			toast("Saved");
+			toast(t("Saved"));
 			refresh();
 		} catch (e) {
-			toast("Save failed: " + e.message, "err");
+			toast(t("Save failed: ") + e.message, "err");
 		}
 	};
 	qs('[data-mbtn="cancel"]', h).onclick = closeModal;
@@ -1641,16 +1664,42 @@ function md(src) {
 
 /* ------------------------------------------------------------------ auth */
 
+function langRow() {
+	const list = langs();
+	if (list.length < 2) return "";
+	return (
+		'<label class="cpm-field"><span>' +
+		t("Language") +
+		'</span><select id="cpm-lang">' +
+		list
+			.map(function (l) {
+				return '<option value="' + l + '"' + (l === curLang() ? " selected" : "") + ">" + l + "</option>";
+			})
+			.join("") +
+		"</select></label>"
+	);
+}
+
+function bindLang(h) {
+	const sel = qs("#cpm-lang", h);
+	if (!sel) return;
+	sel.onchange = function () {
+		setLang(sel.value);
+		doc.location.reload();
+	};
+}
+
 function accountDialog() {
 	if (state.acct !== "*") {
 		const h = modal(
-			"Account",
-			'<p>Signed in as <b>' + esc(state.acct) + "</b>.</p>",
+			t("Account"),
+			"<p>" + t("Signed in as") + " <b>" + esc(state.acct) + "</b>.</p>" + langRow(),
 			[
-				{ id: "cancel", label: "Close" },
-				{ id: "ok", label: "Sign out", kind: "danger" },
+				{ id: "cancel", label: t("Close") },
+				{ id: "ok", label: t("Sign out"), kind: "danger" },
 			]
 		);
+		bindLang(h);
 		qs('[data-mbtn="cancel"]', h).onclick = closeModal;
 		qs('[data-mbtn="ok"]', h).onclick = async function () {
 			closeModal();
@@ -1660,27 +1709,33 @@ function accountDialog() {
 		return;
 	}
 	const h = modal(
-		"Sign in",
-		'<label class="cpm-field"><span>Username</span><input id="cpm-un" type="text" autocomplete="username" /></label>' +
-			'<label class="cpm-field"><span>Password</span><input id="cpm-pw" type="password" autocomplete="current-password" /></label>' +
-			'<p class="cpm-hint">Credentials are sent straight to this copyparty server.</p>',
+		t("Sign in"),
+		'<label class="cpm-field"><span>' +
+			t("Username") +
+			'</span><input id="cpm-un" type="text" autocomplete="username" /></label>' +
+			'<label class="cpm-field"><span>' +
+			t("Password") +
+			'</span><input id="cpm-pw" type="password" autocomplete="current-password" /></label>' +
+			'<p class="cpm-hint">Credentials are sent straight to this copyparty server.</p>' +
+			langRow(),
 		[
-			{ id: "cancel", label: "Cancel" },
-			{ id: "ok", label: "Sign in", kind: "cpm-accent" },
+			{ id: "cancel", label: t("Cancel") },
+			{ id: "ok", label: t("Sign in"), kind: "cpm-accent" },
 		]
 	);
+	bindLang(h);
 	qs("#cpm-un", h).focus();
 	qs('[data-mbtn="cancel"]', h).onclick = closeModal;
 	qs('[data-mbtn="ok"]', h).onclick = async function () {
 		const u = qs("#cpm-un", h).value.trim();
 		const p = qs("#cpm-pw", h).value;
-		if (!p) return toast("Password cannot be blank", "err");
+		if (!p) return toast(t("Password cannot be blank"), "err");
 		try {
 			await api.login(u, p);
 			closeModal();
 			doc.location.reload();
 		} catch (e) {
-			toast("Sign-in failed: " + e.message, "err");
+			toast(t("Sign-in failed: ") + e.message, "err");
 		}
 	};
 	qs("#cpm-pw", h).onkeydown = function (e) {
@@ -2036,7 +2091,7 @@ function bind() {
 			navigate(api.parentVp(state.vp), true);
 			return;
 		}
-		if (e.key === "Delete" && state.sel.size && can("delete")) {
+		if (e.key === t("Delete") && state.sel.size && can("delete")) {
 			deleteDialog(selItems());
 			return;
 		}
