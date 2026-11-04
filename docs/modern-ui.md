@@ -53,6 +53,7 @@ copyparty \
 | move | drag a file or folder onto the tree / breadcrumb, or use Move to... |
 | shares | create a read-only share link with an optional password and expiry, when the server has `--shr` configured |
 | tags | shows a Tags column when the server has a tag index |
+| thumbnails | server-side thumbnails in the grid, with a type-icon fallback |
 | auth | sign in / sign out, per-user permissions, `--usernames` and password-only servers both supported |
 | theming | dark and light, follows the OS by default, remembered per browser |
 | keyboard | `/` search, `Esc` close/clear, `Backspace` up one folder, `F2` rename, `Delete` delete, `Ctrl/Cmd-A` select all, `Enter` open, arrows walk the listing |
@@ -119,11 +120,10 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   resume and chunking.
 * **global search needs the server's index** (`--idx` / `e2dsa`); without it,
   copyparty itself returns no hits, so the ui filters the current folder and says so.
-* **thumbnails could not be verified here.** `?th=` answers 500 on this machine
-  for every size and format, both before and after installing the official
-  webdeps bundle, so the failure is server-side (this checkout runs CPython
-  3.14). The ui probes `?th=` once per session and falls back to file-type
-  icons when it is not usable; that degradation is verified.
+* **thumbnails need the server's webdeps.** The ui asks for `?th=j` (copyparty
+  takes a format code there, not a pixel size) and probes once per session; if
+  the server cannot produce one it falls back to file-type icons. Both paths
+  are verified here, with and without webdeps installed.
 * **english and german only.** The classic ui ships ~30 translations; adding
   another language means adding one dictionary to `web/ui/i18n.js` (english
   strings are the keys). The language follows copyparty's own setting
@@ -163,3 +163,4 @@ for f in copyparty/web/ui/*.js; do cp "$f" "/tmp/$(basename "$f").mjs"; node --c
 | --- | --- |
 | ![markdown preview](modern-ui/preview-markdown.png) | ![image preview](modern-ui/preview-image.png) |
 | ![new folder dialog](modern-ui/dialog-new-folder.png) | ![mobile](modern-ui/mobile.png) |
+| ![thumbnails](modern-ui/thumbnails.png) | |

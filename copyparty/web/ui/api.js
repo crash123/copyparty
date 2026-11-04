@@ -250,7 +250,12 @@ export function rawUrl(vp) {
 	return withK(vpUrl(vp));
 }
 
-/** thumbnail url; copyparty center-crops and downscales server-side */
-export function thumbUrl(vp, size) {
-	return withK(vpUrl(vp) + "?th=" + (size || 256));
+/** thumbnail url; copyparty center-crops and downscales server-side
+ *
+ * ?th= takes a FORMAT code, not a pixel size: j=jpeg, w=webp, x=jxl,
+ * optionally followed by "f" (no crop) and "3" (3x). Passing a number makes
+ * the server read it as a format and answer 500.
+ */
+export function thumbUrl(vp) {
+	return withK(vpUrl(vp) + "?th=j");
 }
