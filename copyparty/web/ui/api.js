@@ -16,7 +16,7 @@ const DIRKEY = (function () {
 	}
 })();
 
-function withK(url) {
+export function withK(url) {
 	if (!DIRKEY) return url;
 	return url + (url.indexOf("?") === -1 ? "?" : "&") + "k=" + encodeURIComponent(DIRKEY);
 }

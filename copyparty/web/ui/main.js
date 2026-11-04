@@ -19,6 +19,7 @@ import {
 	fileKind,
 } from "./dom.js";
 import { icon, kindIcon } from "./icons.js";
+import * as up2k from "./up2k.js";
 
 const doc = document;
 const LS = (function () {
@@ -945,20 +946,58 @@ function runUpload(batch, i, vp) {
 	}
 	const u = batch[i];
 	if (!u || u.status === "cancelled") return runUpload(batch, i + 1, vp);
+
 	u.status = "uploading";
+	u.phase = up2k.supported() && u.file.size ? "hash" : "send";
+	u.pct = 0;
 	renderUploads();
+
 	const ctrl = new AbortController();
 	u.ctrl = ctrl;
-	api
-		.upload(
-			vp,
-			u.file,
-			function (loaded, total) {
-				u.pct = total ? Math.round((loaded / total) * 100) : 0;
-				renderUploads();
-			},
-			ctrl.signal
-		)
+
+	function done() {
+		runUpload(batch, i + 1, vp);
+	}
+
+	async function go() {
+		if (up2k.supported() && u.file.size) {
+			// resumable, chunked, keeps the file mtime
+			await up2k.upload(vp, u.file, {
+				signal: ctrl.signal,
+				onHash: function (d, t) {
+					u.phase = "hash";
+					u.pct = t ? Math.round((d / t) * 45) : 45;
+					renderUploads();
+				},
+				onSend: function (d, t) {
+					u.phase = "send";
+					u.pct = 45 + (t ? Math.round((d / t) * 55) : 55);
+					renderUploads();
+				},
+				onResume: function (have, total) {
+					// everything already on the server means it was deduplicated,
+					// not resumed
+					if (have > 0 && have === total) u.dedup = true;
+					else u.resumed = have;
+				},
+			});
+		} else {
+			// no WebCrypto (plain http on a LAN): the classic uploader
+			u.phase = "send";
+			u.noresume = true;
+			await api.upload(
+				vp,
+				u.file,
+				function (loaded, total) {
+					u.pct = total ? Math.round((loaded / total) * 100) : 0;
+					renderUploads();
+				},
+				ctrl.signal
+			);
+		}
+	}
+
+	go()
 		.then(function () {
 			u.status = "done";
 			u.pct = 100;
@@ -968,9 +1007,23 @@ function runUpload(batch, i, vp) {
 			u.err = e.message;
 			if (e.name !== "AbortError") toast("Upload failed: " + e.message, "err");
 		})
-		.then(function () {
-			runUpload(batch, i + 1, vp);
-		});
+		.then(done);
+}
+
+function retryUpload(i) {
+	const u = state.uploads[i];
+	if (!u) return;
+	const rest = state.uploads.slice(i).filter(function (x) {
+		return x.status === "error" || x.status === "cancelled";
+	});
+	if (!rest.length) return;
+	rest.forEach(function (x) {
+		x.status = "queued";
+		x.pct = 0;
+		x.err = null;
+		x.resumed = 0;
+	});
+	runUpload(rest, 0, state.vp);
 }
 
 function renderUploads() {
@@ -995,6 +1048,7 @@ function renderUploads() {
 		'<div class="cpm-grow"></div>' +
 		(done === total ? '<button class="cpm-icon-btn sm" data-act="hideups">' + icon("close", 14) + "</button>" : "") +
 		"</div>" +
+		(up2k.supported() ? "" : '<div class="cpm-up-note">resumable uploads need https (or localhost)</div>') +
 		'<div class="cpm-up-list">' +
 		state.uploads
 			.map(function (u, i) {
@@ -1013,8 +1067,13 @@ function renderUploads() {
 					esc(statusText(u)) +
 					"</div>" +
 					(u.status === "uploading" || u.status === "queued"
-						? '<button class="cpm-icon-btn sm" data-cancel="' + i + '" title="Cancel">' +
+						? '<button class="cpm-icon-btn sm" data-cancel="' + i + '" title="Cancel" aria-label="Cancel upload">' +
 						  icon("close", 13) +
+						  "</button>"
+						: "") +
+					(u.status === "error" || u.status === "cancelled"
+						? '<button class="cpm-icon-btn sm" data-retry="' + i + '" title="Retry" aria-label="Retry upload">' +
+						  icon("refresh", 13) +
 						  "</button>"
 						: "") +
 					"</div>"
@@ -1026,9 +1085,13 @@ function renderUploads() {
 
 function statusText(u) {
 	if (u.status === "queued") return "waiting";
-	if (u.status === "done") return "done";
+	if (u.status === "done") {
+		if (u.dedup) return "done (already on server)";
+		return u.resumed ? "done (resumed)" : "done";
+	}
 	if (u.status === "cancelled") return "cancelled";
 	if (u.status === "error") return u.err || "failed";
+	if (u.phase === "hash") return "hashing " + u.pct + "%";
 	return u.pct + "%";
 }
 
@@ -1579,6 +1642,12 @@ function bind() {
 			return;
 		}
 
+		const retry = t.closest("[data-retry]");
+		if (retry) {
+			retryUpload(+retry.getAttribute("data-retry"));
+			return;
+		}
+
 		const cancel = t.closest("[data-cancel]");
 		if (cancel) {
 			const u = state.uploads[+cancel.getAttribute("data-cancel")];
@@ -1735,8 +1804,11 @@ function bind() {
 		}
 	});
 
-	/* keyboard */
-	doc.addEventListener("keydown", function (e) {
+	/* keyboard -- capture phase, because the classic ui also binds global
+	   hotkeys on document and would otherwise swallow Escape */
+	doc.addEventListener(
+		"keydown",
+		function (e) {
 		const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "").toUpperCase());
 		if (e.key === "Tab") {
 			const host = qs("#cpm-modal");
@@ -1763,15 +1835,24 @@ function bind() {
 		}
 
 		if (e.key === "Escape") {
+			// swallow the key once we act on it, otherwise the classic ui's
+			// own Escape handler runs afterwards and blurs what we restored
+			const handled = function () {
+				e.stopPropagation();
+				e.preventDefault();
+			};
 			if (state.menu) {
+				handled();
 				closeMenu();
 				return;
 			}
 			if (qs("#cpm-modal").classList.contains("on")) {
+				handled();
 				closeModal();
 				return;
 			}
 			if (state.hits || state.localHits.length) {
+				handled();
 				qs("#cpm-q").value = "";
 				state.query = "";
 				state.hits = null;
@@ -1782,6 +1863,7 @@ function bind() {
 				return;
 			}
 			if (state.sel.size) {
+				handled();
 				selectOnly(null);
 				return;
 			}
@@ -1834,7 +1916,9 @@ function bind() {
 			renderSelection();
 			renderToolbar();
 		}
-	});
+		},
+		true
+	);
 
 	window.addEventListener("popstate", function () {
 		navigate(urlVp(), false);

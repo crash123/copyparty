@@ -969,6 +969,13 @@ html.cpm-active body {
 	font-size: 12px;
 }
 
+.cpm-up-note {
+	padding: 6px 14px;
+	font-size: 11.5px;
+	color: var(--cpm-muted);
+	border-bottom: 1px solid var(--cpm-border);
+}
+
 .cpm-up-list {
 	overflow: auto;
 	padding: 6px;
