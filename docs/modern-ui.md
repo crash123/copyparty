@@ -124,6 +124,8 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   takes a format code there, not a pixel size) and probes once per session; if
   the server cannot produce one it falls back to file-type icons. Both paths
   are verified here, with and without webdeps installed.
+* **firefox is untested.** chromium and webkit are verified end to end;
+  playwright's firefox build would not download in this environment.
 * **english and german only.** The classic ui ships ~30 translations; adding
   another language means adding one dictionary to `web/ui/i18n.js` (english
   strings are the keys). The language follows copyparty's own setting
@@ -142,8 +144,16 @@ is available) that the bundle mounts and renders:
 python3 -m pytest tests/test_webui.py -q
 ```
 
-The browser flows (upload, preview, dialog focus, url state) were exercised
-against a live server with playwright during development.
+The browser flows live in `tests/webui/e2e.js` (playwright): upload, preview +
+url state, editor, share links, drag-to-move and dialog focus. Run it with
+
+```sh
+npm i playwright && npx playwright install webkit
+CP_URL=http://127.0.0.1:3923 CP_USER=rob CP_PASS=secret node tests/webui/e2e.js chrome
+```
+
+All six steps pass on **chromium (installed chrome) and webkit**; firefox has
+not been run because playwright's firefox build would not download here.
 
 ## development
 
