@@ -8,5 +8,18 @@
         "ecmaVersion": 12
     },
     "rules": {
-    }
+    },
+    "overrides": [
+        {
+            "files": ["copyparty/web/ui/*.js"],
+            "env": {
+                "browser": true,
+                "es2022": true
+            },
+            "parserOptions": {
+                "ecmaVersion": 2022,
+                "sourceType": "module"
+            }
+        }
+    ]
 }
