@@ -33,6 +33,13 @@ CP_URL=http://127.0.0.1:3923 CP_USER=rob CP_PASS=secret \
 `webkit` use playwright's own builds. The script exits non-zero if a step fails
 or the page logs an unexpected error.
 
+If the tests run inside another sandbox (CI, containers on a mac), firefox
+needs its own content sandbox disabled, otherwise no page can be created:
+
+```sh
+MOZ_DISABLE_CONTENT_SANDBOX=1 node tests/webui/e2e.js firefox
+```
+
 ## what each step proves
 
 | step | assertion |

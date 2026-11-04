@@ -124,8 +124,9 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   takes a format code there, not a pixel size) and probes once per session; if
   the server cannot produce one it falls back to file-type icons. Both paths
   are verified here, with and without webdeps installed.
-* **firefox is untested.** chromium and webkit are verified end to end;
-  playwright's firefox build would not download in this environment.
+* **browser coverage:** chrome, webkit and firefox are all verified end to end
+  (see the tests section). Their playwright builds had to be fetched with curl
+  and extracted by hand because playwright's own downloader stalled here.
 * **english and german only.** The classic ui ships ~30 translations; adding
   another language means adding one dictionary to `web/ui/i18n.js` (english
   strings are the keys). The language follows copyparty's own setting
@@ -152,8 +153,9 @@ npm i playwright && npx playwright install webkit
 CP_URL=http://127.0.0.1:3923 CP_USER=rob CP_PASS=secret node tests/webui/e2e.js chrome
 ```
 
-All six steps pass on **chromium (installed chrome) and webkit**; firefox has
-not been run because playwright's firefox build would not download here.
+All six steps pass on **chrome, webkit and firefox**. In a sandboxed
+environment firefox needs `MOZ_DISABLE_CONTENT_SANDBOX=1`, because its own
+content sandbox cannot initialise when nested inside another one.
 
 ## development
 
