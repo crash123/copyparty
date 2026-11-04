@@ -137,6 +137,34 @@ export async function saveText(vp, text, lastmodMs) {
 	}
 }
 
+/** create a read-only share link; resolves to the full url */
+export async function createShare(vps, pw, expSec) {
+	const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+	let k = "";
+	const rnd = window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(12)) : null;
+	for (let i = 0; i < 12; i++)
+		k += chars[(rnd ? rnd[i] : Math.floor(Math.random() * 256)) % chars.length];
+
+	const body = JSON.stringify({
+		k: k,
+		vp: vps,
+		pw: pw || "",
+		exp: expSec || 0,
+		perms: ["read"],
+	});
+
+	const r = await fetch(withK(SR + "/?share"), {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "Content-Type": "text/plain" },
+		body: body,
+	});
+	const txt = (await r.text()).trim();
+	if (r.status !== 201 || txt.indexOf("created share:") !== 0)
+		throw new Error(txt || "HTTP " + r.status);
+	return txt.slice("created share:".length).trim();
+}
+
 export async function remove(vp) {
 	return req(vpUrl(vp) + "?delete", { method: "POST" });
 }

@@ -442,7 +442,10 @@ function renderToolbar() {
 		"</div>" +
 		'<div class="cpm-grow"></div>' +
 		(can("write")
-			? '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>New folder</span></button>" +
+			? (sharesEnabled()
+					? '<button class="cpm-btn" data-act="sharefolder">' + icon("user", 15) + "<span>Share</span></button>"
+					: "") +
+			  '<button class="cpm-btn" data-act="newdir">' + icon("folder-plus", 15) + "<span>New folder</span></button>" +
 			  '<button class="cpm-btn" data-act="newfile">' + icon("text", 15) + "<span>New file</span></button>"
 			: "") +
 		'<div class="cpm-sort">' +
@@ -865,6 +868,7 @@ function openMenu(vp, x, y) {
 	const acts = [];
 	acts.push(["open", it.isDir ? "Open folder" : "Open", "chevron"]);
 	acts.push(["download", "Download", "download"]);
+	if (can("read") && sharesEnabled()) acts.push(["share", "Share link", "user"]);
 	if (can("write") && (it.kind === "text" || it.kind === "code" || it.kind === "markdown"))
 		acts.push(["edit", "Edit text", "edit"]);
 	if (can("move")) acts.push(["rename", "Rename", "edit"]);
@@ -911,6 +915,7 @@ function handleItemAction(act, vp) {
 	if (act === "open") return openItem(it);
 	if (act === "download") return download([it]);
 	if (act === "edit") return openEditor(it);
+	if (act === "share") return shareDialog([it]);
 	if (act === "rename") return renameDialog(it);
 	if (act === "move") return moveDialog([it]);
 	if (act === "delete") return deleteDialog([it]);
@@ -1251,6 +1256,62 @@ async function newFileDialog() {
 	} catch (e) {
 		toast("Could not create file: " + e.message, "err");
 	}
+}
+
+async function shareDialog(items) {
+	const vps = items && items.length
+		? items.map(function (i) {
+				return i.vp;
+		  })
+		: [state.vp];
+
+	const h = modal(
+		"Share " + (items.length ? "“" + items[0].name + "”" : "this folder"),
+		'<p class="cpm-hint">Creates a read-only link. You can add a password and an expiry.</p>' +
+			'<label class="cpm-field"><span>Password (optional)</span><input id="cpm-shr-pw" type="text" autocomplete="off" /></label>' +
+			'<label class="cpm-field"><span>Expires</span><select id="cpm-shr-exp">' +
+			'<option value="0">never</option><option value="3600">1 hour</option>' +
+			'<option value="86400">1 day</option><option value="604800">1 week</option>' +
+			"</select></label>",
+		[
+			{ id: "cancel", label: "Cancel" },
+			{ id: "ok", label: "Create link", kind: "cpm-accent" },
+		]
+	);
+
+	qs('[data-mbtn="cancel"]', h).onclick = closeModal;
+	qs('[data-mbtn="ok"]', h).onclick = async function () {
+		const pw = qs("#cpm-shr-pw", h).value;
+		const exp = parseInt(qs("#cpm-shr-exp", h).value, 10) || 0;
+		try {
+			const url = await api.createShare(vps, pw, exp);
+			qs(".cpm-dlg-body", h).innerHTML =
+				'<p class="cpm-hint">Share created. Anyone with this link can read it.</p>' +
+				'<label class="cpm-field"><span>Link</span><input id="cpm-shr-url" type="text" readonly /></label>';
+			qs("#cpm-shr-url", h).value = url;
+			qs("#cpm-shr-url", h).select();
+			qs(".cpm-dlg-foot", h).innerHTML =
+				'<button class="cpm-btn" data-mbtn="cancel">Close</button>' +
+				'<button class="cpm-btn cpm-accent" data-mbtn="ok">Copy</button>';
+			qs('[data-mbtn="cancel"]', h).onclick = closeModal;
+			qs('[data-mbtn="ok"]', h).onclick = function () {
+				const inp = qs("#cpm-shr-url", h);
+				inp.select();
+				if (navigator.clipboard) navigator.clipboard.writeText(url).then(
+					function () { toast("Link copied"); },
+					function () { toast("Press Ctrl/Cmd-C to copy", "err"); }
+				);
+				else toast("Press Ctrl/Cmd-C to copy", "err");
+			};
+		} catch (e) {
+			toast("Could not create share: " + e.message, "err");
+		}
+	};
+}
+
+function sharesEnabled() {
+	// the server only supports shares when it was started with --shr
+	return !!state.cfg && state.cfg.shr_who && state.cfg.shr_who !== "no";
 }
 
 function zipSelection() {
@@ -1673,6 +1734,7 @@ function bind() {
 			else if (a === "account") accountDialog();
 			else if (a === "newdir") newFolderDialog();
 			else if (a === "newfile") newFileDialog();
+			else if (a === "sharefolder") shareDialog([]);
 			else if (a === "more") showMore();
 			else if (a === "zip") zipSelection();
 			else if (a === "clearq") {

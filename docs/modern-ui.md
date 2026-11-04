@@ -49,6 +49,9 @@ copyparty \
 | file ops | create folder, rename, move, delete, download, zip a folder — all gated by the permissions the server reports |
 | upload | drag-and-drop anywhere (or the Upload button): resumable, chunked up2k uploads when the page is on https or localhost, falling back to the classic multipart uploader otherwise; per-file hashing/sending progress, cancel and retry |
 | big folders | entries are rendered 200 at a time with a "show more" control |
+| editor | edit text/code/markdown in a monospace dialog (ctrl/cmd-s saves) |
+| shares | create a read-only share link with an optional password and expiry, when the server has `--shr` configured |
+| tags | shows a Tags column when the server has a tag index |
 | auth | sign in / sign out, per-user permissions, `--usernames` and password-only servers both supported |
 | theming | dark and light, follows the OS by default, remembered per browser |
 | keyboard | `/` search, `Esc` close/clear, `Backspace` up one folder, `F2` rename, `Delete` delete, `Ctrl/Cmd-A` select all, `Enter` open, arrows walk the listing |
@@ -118,8 +121,9 @@ Everything else is additive; the fork rebases cleanly onto upstream.
   official webdeps bundle (pip/docker/sfx/source-release) the same code shows
   real thumbnails, but that path has not been exercised in this working tree.
 * **english only.** The classic ui ships ~30 translations; this one has none yet.
-* **not implemented yet:** shares, the text editor, tag editing, chmod, and
-  drag-to-move onto the folder tree. Everything else in the table above works.
+* **tag editing and chmod are not implemented.** copyparty does not expose
+  either over its http api, so there is nothing to call.
+* **drag-to-move onto the folder tree** is not implemented; use Move to...
 
 ## tests
 
