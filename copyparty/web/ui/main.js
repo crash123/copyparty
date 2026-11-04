@@ -47,6 +47,7 @@ const state = {
 	tree: new Map(),
 	treeOpen: new Set(["/"]),
 	uploads: [],
+	taglist: [],
 	loading: false,
 	thumbsOK: null,
 	menu: null,
@@ -256,6 +257,7 @@ async function refresh() {
 		state.perms = r.perms || [];
 		state.acct = r.acct || "*";
 		state.srvinf = r.srvinf || "";
+		state.taglist = r.taglist || [];
 		state.cfg = r.cfg || {};
 		state.items = normalize(r);
 		await probeThumbs();
@@ -542,6 +544,7 @@ function cardHtml(it) {
 		esc(it.name) +
 		"</div>" +
 		'<div class="cpm-meta">' +
+		(it.tags && Object.keys(it.tags).length ? esc(Object.values(it.tags).join(" · ")) + " · " : "") +
 		(it.isDir ? "folder" : esc(fmtSize(it.sz))) +
 		(it.ts ? " · " + esc(fmtDate(it.ts)) : "") +
 		"</div>" +
@@ -571,6 +574,7 @@ function tableHtml(items, more) {
 		th("name", "Name") +
 		th("size", "Size") +
 		th("type", "Type") +
+		(state.taglist.length ? '<th class="cpm-th-tags">Tags</th>' : "") +
 		th("date", "Modified") +
 		'<th class="cpm-th-act"></th>' +
 		"</tr></thead><tbody>" +
@@ -599,6 +603,18 @@ function tableHtml(items, more) {
 					"<td>" +
 					esc(it.isDir ? "folder" : it.kind) +
 					"</td>" +
+					(state.taglist.length
+						? "<td>" +
+						  esc(
+								state.taglist
+									.map(function (k) {
+										return it.tags && it.tags[k] ? it.tags[k] : "";
+									})
+									.filter(Boolean)
+									.join(" · ")
+						  ) +
+						  "</td>"
+						: "") +
 					"<td>" +
 					(it.ts ? esc(fmtDate(it.ts)) : "—") +
 					"</td>" +
@@ -849,6 +865,8 @@ function openMenu(vp, x, y) {
 	const acts = [];
 	acts.push(["open", it.isDir ? "Open folder" : "Open", "chevron"]);
 	acts.push(["download", "Download", "download"]);
+	if (can("write") && (it.kind === "text" || it.kind === "code" || it.kind === "markdown"))
+		acts.push(["edit", "Edit text", "edit"]);
 	if (can("move")) acts.push(["rename", "Rename", "edit"]);
 	if (can("move")) acts.push(["move", "Move to…", "folder"]);
 	if (can("delete")) acts.push(["delete", "Delete", "trash"]);
@@ -892,6 +910,7 @@ function handleItemAction(act, vp) {
 	if (!it) return;
 	if (act === "open") return openItem(it);
 	if (act === "download") return download([it]);
+	if (act === "edit") return openEditor(it);
 	if (act === "rename") return renameDialog(it);
 	if (act === "move") return moveDialog([it]);
 	if (act === "delete") return deleteDialog([it]);
@@ -1375,6 +1394,9 @@ async function openPreview(it) {
 		esc(fmtDateTime(it.ts)) +
 		"</span></div>" +
 		'<div class="cpm-pv-acts">' +
+		(can("write") && (kind === "text" || kind === "code" || kind === "markdown")
+			? '<button class="cpm-btn" data-pv="edit">' + icon("edit", 15) + "<span>Edit</span></button>"
+			: "") +
 		'<button class="cpm-btn" data-pv="download">' +
 		icon("download", 15) +
 		"<span>Download</span></button>" +
@@ -1390,6 +1412,12 @@ async function openPreview(it) {
 	qs('[data-pv="download"]', h).onclick = function () {
 		download([it]);
 	};
+	const pve = qs('[data-pv="edit"]', h);
+	if (pve)
+		pve.onclick = function () {
+			closeModal();
+			openEditor(it);
+		};
 	const pvf = firstFocusable(h);
 	if (pvf) setTimeout(function () {
 		pvf.focus();
@@ -1407,6 +1435,57 @@ async function openPreview(it) {
 			box.innerHTML = '<div class="cpm-pv-loading">Could not load file: ' + esc(e.message) + "</div>";
 		}
 	}
+}
+
+async function openEditor(it) {
+	let text;
+	// copyparty's conflict guard wants the exact mtime in milliseconds, which
+	// neither the listing (seconds) nor the Last-Modified header (seconds) can
+	// express; -1 is the documented "just write it" value
+	const lastmod = -1;
+	try {
+		const r = await fetch(api.rawUrl(it.vp), { credentials: "same-origin" });
+		if (!r.ok) throw new Error("HTTP " + r.status);
+		text = await r.text();
+	} catch (e) {
+		return toast("Could not open file: " + e.message, "err");
+	}
+
+	const h = modal(
+		"Editing " + it.name,
+		'<label class="cpm-field"><span>Contents</span>' +
+			'<textarea id="cpm-editor" spellcheck="false" aria-label="File contents"></textarea></label>',
+		[
+			{ id: "cancel", label: "Cancel" },
+			{ id: "ok", label: "Save", kind: "cpm-accent" },
+		]
+	);
+
+	const ta = qs("#cpm-editor", h);
+	ta.value = text;
+	const save = async function () {
+		try {
+			const r = await api.saveText(it.vp, ta.value, lastmod);
+			if (r && r.ok === false) {
+				toast("The file changed on the server; reopen it and try again", "err");
+				return;
+			}
+			closeModal();
+			toast("Saved");
+			refresh();
+		} catch (e) {
+			toast("Save failed: " + e.message, "err");
+		}
+	};
+	qs('[data-mbtn="cancel"]', h).onclick = closeModal;
+	qs('[data-mbtn="ok"]', h).onclick = save;
+	ta.addEventListener("keydown", function (e) {
+		// ctrl/cmd-s saves without closing the keyboard flow
+		if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			save();
+		}
+	});
 }
 
 /* minimal, escape-first markdown renderer */

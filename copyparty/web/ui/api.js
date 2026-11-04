@@ -120,6 +120,23 @@ export function zipSelection(vp, names) {
 	}, 2000);
 }
 
+/** save an edited text file; lastmodMs guards against clobbering */
+export async function saveText(vp, text, lastmodMs) {
+	const fd = new FormData();
+	fd.append("act", "tput");
+	fd.append("lastmod", String(lastmodMs));
+	// the server insists on this exact field name; anything else is rejected
+	// *after* it has moved the old file into history
+	fd.append("body", text);
+
+	const txt = await req(vpUrl(vp), { method: "POST", body: fd });
+	try {
+		return JSON.parse(txt);
+	} catch (e) {
+		return { ok: true };
+	}
+}
+
 export async function remove(vp) {
 	return req(vpUrl(vp) + "?delete", { method: "POST" });
 }

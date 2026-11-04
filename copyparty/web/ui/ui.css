@@ -1069,6 +1069,10 @@ html.cpm-active body {
 	top: 50%;
 	transform: translate(-50%, -50%);
 	width: min(460px, calc(100vw - 32px));
+	max-width: calc(100vw - 32px);
+	max-height: calc(100vh - 40px);
+	display: flex;
+	flex-direction: column;
 	background: var(--cpm-surface);
 	border: 1px solid var(--cpm-border);
 	border-radius: 16px;
@@ -1116,6 +1120,30 @@ html.cpm-active body {
 	font-weight: 600;
 	color: var(--cpm-muted);
 	margin-bottom: 5px;
+}
+
+.cpm-field textarea {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 100%;
+	min-height: 52vh;
+	padding: 11px 13px;
+	border-radius: 10px;
+	border: 1px solid var(--cpm-border);
+	background: var(--cpm-surface-2);
+	color: var(--cpm-fg);
+	outline: none;
+	resize: vertical;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	line-height: 1.55;
+	tab-size: 4;
+}
+
+.cpm-field textarea:focus {
+	border-color: var(--cpm-accent);
+	background: var(--cpm-surface);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--cpm-accent) 18%, transparent);
 }
 
 .cpm-field input {
